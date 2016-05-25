@@ -12,5 +12,5 @@ setup(
     license='MIT',
     packages=['tui'],
     install_requires=[line for line in open('requirements.txt')],
-    entry_points={'console_scripts': ['tgen-tui = tui:run']}
+    entry_points={'console_scripts': ['tgen-tui = tui.main:run']}
 )
