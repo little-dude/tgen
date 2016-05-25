@@ -18,7 +18,7 @@ func Serve() {
 	defer listener.Close() // Close the listener when the application closes.
 	Info.Println("Listening on TCP port 1234")
 
-	controller := schema.Controller_ServerToClient(Controller{})
+	controller := schema.Controller_ServerToClient(&Controller{})
 	for true {
 		connection, e := listener.Accept()
 		Info.Println("New connection")
