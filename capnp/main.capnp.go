@@ -1689,452 +1689,32 @@ func (p Stream_setConfig_Results_Promise) Struct() (Stream_setConfig_Results, er
 	return Stream_setConfig_Results{s}, err
 }
 
-type Field8 struct{ capnp.Struct }
+type Field struct{ capnp.Struct }
 
-func NewField8(s *capnp.Segment) (Field8, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
+func NewField(s *capnp.Segment) (Field, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4})
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{st}, nil
+	return Field{st}, nil
 }
 
-func NewRootField8(s *capnp.Segment) (Field8, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
+func NewRootField(s *capnp.Segment) (Field, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4})
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{st}, nil
+	return Field{st}, nil
 }
 
-func ReadRootField8(msg *capnp.Message) (Field8, error) {
+func ReadRootField(msg *capnp.Message) (Field, error) {
 	root, err := msg.RootPtr()
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{root.Struct()}, nil
+	return Field{root.Struct()}, nil
 }
-func (s Field8) Value() uint8 {
-	return s.Struct.Uint8(0)
-}
-
-func (s Field8) SetValue(v uint8) {
-	s.Struct.SetUint8(0, v)
-}
-
-func (s Field8) Step() uint8 {
-	return s.Struct.Uint8(1)
-}
-
-func (s Field8) SetStep(v uint8) {
-	s.Struct.SetUint8(1, v)
-}
-
-func (s Field8) Mode() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return "", err
-	}
-	return p.Text(), nil
-}
-
-func (s Field8) HasMode() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s Field8) ModeBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return nil, err
-	}
-	d := p.Data()
-	if len(d) == 0 {
-		return d, nil
-	}
-	return d[:len(d)-1], nil
-}
-
-func (s Field8) SetMode(v string) error {
-	t, err := capnp.NewText(s.Struct.Segment(), v)
-	if err != nil {
-		return err
-	}
-	return s.Struct.SetPtr(0, t.List.ToPtr())
-}
-
-func (s Field8) Count() uint8 {
-	return s.Struct.Uint8(2)
-}
-
-func (s Field8) SetCount(v uint8) {
-	s.Struct.SetUint8(2, v)
-}
-
-// Field8_List is a list of Field8.
-type Field8_List struct{ capnp.List }
-
-// NewField8 creates a new list of Field8.
-func NewField8_List(s *capnp.Segment, sz int32) (Field8_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1}, sz)
-	if err != nil {
-		return Field8_List{}, err
-	}
-	return Field8_List{l}, nil
-}
-
-func (s Field8_List) At(i int) Field8           { return Field8{s.List.Struct(i)} }
-func (s Field8_List) Set(i int, v Field8) error { return s.List.SetStruct(i, v.Struct) }
-
-// Field8_Promise is a wrapper for a Field8 promised by a client call.
-type Field8_Promise struct{ *capnp.Pipeline }
-
-func (p Field8_Promise) Struct() (Field8, error) {
-	s, err := p.Pipeline.Struct()
-	return Field8{s}, err
-}
-
-type Field16 struct{ capnp.Struct }
-
-func NewField16(s *capnp.Segment) (Field16, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
-	if err != nil {
-		return Field16{}, err
-	}
-	return Field16{st}, nil
-}
-
-func NewRootField16(s *capnp.Segment) (Field16, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
-	if err != nil {
-		return Field16{}, err
-	}
-	return Field16{st}, nil
-}
-
-func ReadRootField16(msg *capnp.Message) (Field16, error) {
-	root, err := msg.RootPtr()
-	if err != nil {
-		return Field16{}, err
-	}
-	return Field16{root.Struct()}, nil
-}
-func (s Field16) Value() uint16 {
-	return s.Struct.Uint16(0)
-}
-
-func (s Field16) SetValue(v uint16) {
-	s.Struct.SetUint16(0, v)
-}
-
-func (s Field16) Step() uint16 {
-	return s.Struct.Uint16(2)
-}
-
-func (s Field16) SetStep(v uint16) {
-	s.Struct.SetUint16(2, v)
-}
-
-func (s Field16) Mode() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return "", err
-	}
-	return p.Text(), nil
-}
-
-func (s Field16) HasMode() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s Field16) ModeBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return nil, err
-	}
-	d := p.Data()
-	if len(d) == 0 {
-		return d, nil
-	}
-	return d[:len(d)-1], nil
-}
-
-func (s Field16) SetMode(v string) error {
-	t, err := capnp.NewText(s.Struct.Segment(), v)
-	if err != nil {
-		return err
-	}
-	return s.Struct.SetPtr(0, t.List.ToPtr())
-}
-
-func (s Field16) Count() uint16 {
-	return s.Struct.Uint16(4)
-}
-
-func (s Field16) SetCount(v uint16) {
-	s.Struct.SetUint16(4, v)
-}
-
-// Field16_List is a list of Field16.
-type Field16_List struct{ capnp.List }
-
-// NewField16 creates a new list of Field16.
-func NewField16_List(s *capnp.Segment, sz int32) (Field16_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1}, sz)
-	if err != nil {
-		return Field16_List{}, err
-	}
-	return Field16_List{l}, nil
-}
-
-func (s Field16_List) At(i int) Field16           { return Field16{s.List.Struct(i)} }
-func (s Field16_List) Set(i int, v Field16) error { return s.List.SetStruct(i, v.Struct) }
-
-// Field16_Promise is a wrapper for a Field16 promised by a client call.
-type Field16_Promise struct{ *capnp.Pipeline }
-
-func (p Field16_Promise) Struct() (Field16, error) {
-	s, err := p.Pipeline.Struct()
-	return Field16{s}, err
-}
-
-type Field32 struct{ capnp.Struct }
-
-func NewField32(s *capnp.Segment) (Field32, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
-	if err != nil {
-		return Field32{}, err
-	}
-	return Field32{st}, nil
-}
-
-func NewRootField32(s *capnp.Segment) (Field32, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
-	if err != nil {
-		return Field32{}, err
-	}
-	return Field32{st}, nil
-}
-
-func ReadRootField32(msg *capnp.Message) (Field32, error) {
-	root, err := msg.RootPtr()
-	if err != nil {
-		return Field32{}, err
-	}
-	return Field32{root.Struct()}, nil
-}
-func (s Field32) Value() uint32 {
-	return s.Struct.Uint32(0)
-}
-
-func (s Field32) SetValue(v uint32) {
-	s.Struct.SetUint32(0, v)
-}
-
-func (s Field32) Step() uint32 {
-	return s.Struct.Uint32(4)
-}
-
-func (s Field32) SetStep(v uint32) {
-	s.Struct.SetUint32(4, v)
-}
-
-func (s Field32) Mode() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return "", err
-	}
-	return p.Text(), nil
-}
-
-func (s Field32) HasMode() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s Field32) ModeBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return nil, err
-	}
-	d := p.Data()
-	if len(d) == 0 {
-		return d, nil
-	}
-	return d[:len(d)-1], nil
-}
-
-func (s Field32) SetMode(v string) error {
-	t, err := capnp.NewText(s.Struct.Segment(), v)
-	if err != nil {
-		return err
-	}
-	return s.Struct.SetPtr(0, t.List.ToPtr())
-}
-
-func (s Field32) Count() uint32 {
-	return s.Struct.Uint32(8)
-}
-
-func (s Field32) SetCount(v uint32) {
-	s.Struct.SetUint32(8, v)
-}
-
-// Field32_List is a list of Field32.
-type Field32_List struct{ capnp.List }
-
-// NewField32 creates a new list of Field32.
-func NewField32_List(s *capnp.Segment, sz int32) (Field32_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1}, sz)
-	if err != nil {
-		return Field32_List{}, err
-	}
-	return Field32_List{l}, nil
-}
-
-func (s Field32_List) At(i int) Field32           { return Field32{s.List.Struct(i)} }
-func (s Field32_List) Set(i int, v Field32) error { return s.List.SetStruct(i, v.Struct) }
-
-// Field32_Promise is a wrapper for a Field32 promised by a client call.
-type Field32_Promise struct{ *capnp.Pipeline }
-
-func (p Field32_Promise) Struct() (Field32, error) {
-	s, err := p.Pipeline.Struct()
-	return Field32{s}, err
-}
-
-type Field64 struct{ capnp.Struct }
-
-func NewField64(s *capnp.Segment) (Field64, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 24, PointerCount: 1})
-	if err != nil {
-		return Field64{}, err
-	}
-	return Field64{st}, nil
-}
-
-func NewRootField64(s *capnp.Segment) (Field64, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 24, PointerCount: 1})
-	if err != nil {
-		return Field64{}, err
-	}
-	return Field64{st}, nil
-}
-
-func ReadRootField64(msg *capnp.Message) (Field64, error) {
-	root, err := msg.RootPtr()
-	if err != nil {
-		return Field64{}, err
-	}
-	return Field64{root.Struct()}, nil
-}
-func (s Field64) Value() uint64 {
-	return s.Struct.Uint64(0)
-}
-
-func (s Field64) SetValue(v uint64) {
-	s.Struct.SetUint64(0, v)
-}
-
-func (s Field64) Step() uint64 {
-	return s.Struct.Uint64(8)
-}
-
-func (s Field64) SetStep(v uint64) {
-	s.Struct.SetUint64(8, v)
-}
-
-func (s Field64) Mode() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return "", err
-	}
-	return p.Text(), nil
-}
-
-func (s Field64) HasMode() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s Field64) ModeBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return nil, err
-	}
-	d := p.Data()
-	if len(d) == 0 {
-		return d, nil
-	}
-	return d[:len(d)-1], nil
-}
-
-func (s Field64) SetMode(v string) error {
-	t, err := capnp.NewText(s.Struct.Segment(), v)
-	if err != nil {
-		return err
-	}
-	return s.Struct.SetPtr(0, t.List.ToPtr())
-}
-
-func (s Field64) Count() uint64 {
-	return s.Struct.Uint64(16)
-}
-
-func (s Field64) SetCount(v uint64) {
-	s.Struct.SetUint64(16, v)
-}
-
-// Field64_List is a list of Field64.
-type Field64_List struct{ capnp.List }
-
-// NewField64 creates a new list of Field64.
-func NewField64_List(s *capnp.Segment, sz int32) (Field64_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 24, PointerCount: 1}, sz)
-	if err != nil {
-		return Field64_List{}, err
-	}
-	return Field64_List{l}, nil
-}
-
-func (s Field64_List) At(i int) Field64           { return Field64{s.List.Struct(i)} }
-func (s Field64_List) Set(i int, v Field64) error { return s.List.SetStruct(i, v.Struct) }
-
-// Field64_Promise is a wrapper for a Field64 promised by a client call.
-type Field64_Promise struct{ *capnp.Pipeline }
-
-func (p Field64_Promise) Struct() (Field64, error) {
-	s, err := p.Pipeline.Struct()
-	return Field64{s}, err
-}
-
-type LongField struct{ capnp.Struct }
-
-func NewLongField(s *capnp.Segment) (LongField, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 5})
-	if err != nil {
-		return LongField{}, err
-	}
-	return LongField{st}, nil
-}
-
-func NewRootLongField(s *capnp.Segment) (LongField, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 5})
-	if err != nil {
-		return LongField{}, err
-	}
-	return LongField{st}, nil
-}
-
-func ReadRootLongField(msg *capnp.Message) (LongField, error) {
-	root, err := msg.RootPtr()
-	if err != nil {
-		return LongField{}, err
-	}
-	return LongField{root.Struct()}, nil
-}
-func (s LongField) Value() ([]byte, error) {
+func (s Field) Value() ([]byte, error) {
 	p, err := s.Struct.Ptr(0)
 	if err != nil {
 		return nil, err
@@ -2142,12 +1722,12 @@ func (s LongField) Value() ([]byte, error) {
 	return []byte(p.Data()), nil
 }
 
-func (s LongField) HasValue() bool {
+func (s Field) HasValue() bool {
 	p, err := s.Struct.Ptr(0)
 	return p.IsValid() || err != nil
 }
 
-func (s LongField) SetValue(v []byte) error {
+func (s Field) SetValue(v []byte) error {
 	d, err := capnp.NewData(s.Struct.Segment(), []byte(v))
 	if err != nil {
 		return err
@@ -2155,42 +1735,21 @@ func (s LongField) SetValue(v []byte) error {
 	return s.Struct.SetPtr(0, d.List.ToPtr())
 }
 
-func (s LongField) Step() ([]byte, error) {
+func (s Field) Mode() (string, error) {
 	p, err := s.Struct.Ptr(1)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(p.Data()), nil
-}
-
-func (s LongField) HasStep() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s LongField) SetStep(v []byte) error {
-	d, err := capnp.NewData(s.Struct.Segment(), []byte(v))
-	if err != nil {
-		return err
-	}
-	return s.Struct.SetPtr(1, d.List.ToPtr())
-}
-
-func (s LongField) Mode() (string, error) {
-	p, err := s.Struct.Ptr(2)
 	if err != nil {
 		return "", err
 	}
 	return p.Text(), nil
 }
 
-func (s LongField) HasMode() bool {
-	p, err := s.Struct.Ptr(2)
+func (s Field) HasMode() bool {
+	p, err := s.Struct.Ptr(1)
 	return p.IsValid() || err != nil
 }
 
-func (s LongField) ModeBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(2)
+func (s Field) ModeBytes() ([]byte, error) {
+	p, err := s.Struct.Ptr(1)
 	if err != nil {
 		return nil, err
 	}
@@ -2201,15 +1760,36 @@ func (s LongField) ModeBytes() ([]byte, error) {
 	return d[:len(d)-1], nil
 }
 
-func (s LongField) SetMode(v string) error {
+func (s Field) SetMode(v string) error {
 	t, err := capnp.NewText(s.Struct.Segment(), v)
 	if err != nil {
 		return err
 	}
-	return s.Struct.SetPtr(2, t.List.ToPtr())
+	return s.Struct.SetPtr(1, t.List.ToPtr())
 }
 
-func (s LongField) Count() ([]byte, error) {
+func (s Field) Step() ([]byte, error) {
+	p, err := s.Struct.Ptr(2)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(p.Data()), nil
+}
+
+func (s Field) HasStep() bool {
+	p, err := s.Struct.Ptr(2)
+	return p.IsValid() || err != nil
+}
+
+func (s Field) SetStep(v []byte) error {
+	d, err := capnp.NewData(s.Struct.Segment(), []byte(v))
+	if err != nil {
+		return err
+	}
+	return s.Struct.SetPtr(2, d.List.ToPtr())
+}
+
+func (s Field) Mask() ([]byte, error) {
 	p, err := s.Struct.Ptr(3)
 	if err != nil {
 		return nil, err
@@ -2217,12 +1797,12 @@ func (s LongField) Count() ([]byte, error) {
 	return []byte(p.Data()), nil
 }
 
-func (s LongField) HasCount() bool {
+func (s Field) HasMask() bool {
 	p, err := s.Struct.Ptr(3)
 	return p.IsValid() || err != nil
 }
 
-func (s LongField) SetCount(v []byte) error {
+func (s Field) SetMask(v []byte) error {
 	d, err := capnp.NewData(s.Struct.Segment(), []byte(v))
 	if err != nil {
 		return err
@@ -2230,67 +1810,54 @@ func (s LongField) SetCount(v []byte) error {
 	return s.Struct.SetPtr(3, d.List.ToPtr())
 }
 
-func (s LongField) Mask() ([]byte, error) {
-	p, err := s.Struct.Ptr(4)
+func (s Field) Count() uint64 {
+	return s.Struct.Uint64(0)
+}
+
+func (s Field) SetCount(v uint64) {
+	s.Struct.SetUint64(0, v)
+}
+
+// Field_List is a list of Field.
+type Field_List struct{ capnp.List }
+
+// NewField creates a new list of Field.
+func NewField_List(s *capnp.Segment, sz int32) (Field_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4}, sz)
 	if err != nil {
-		return nil, err
+		return Field_List{}, err
 	}
-	return []byte(p.Data()), nil
+	return Field_List{l}, nil
 }
 
-func (s LongField) HasMask() bool {
-	p, err := s.Struct.Ptr(4)
-	return p.IsValid() || err != nil
-}
+func (s Field_List) At(i int) Field           { return Field{s.List.Struct(i)} }
+func (s Field_List) Set(i int, v Field) error { return s.List.SetStruct(i, v.Struct) }
 
-func (s LongField) SetMask(v []byte) error {
-	d, err := capnp.NewData(s.Struct.Segment(), []byte(v))
-	if err != nil {
-		return err
-	}
-	return s.Struct.SetPtr(4, d.List.ToPtr())
-}
+// Field_Promise is a wrapper for a Field promised by a client call.
+type Field_Promise struct{ *capnp.Pipeline }
 
-// LongField_List is a list of LongField.
-type LongField_List struct{ capnp.List }
-
-// NewLongField creates a new list of LongField.
-func NewLongField_List(s *capnp.Segment, sz int32) (LongField_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 5}, sz)
-	if err != nil {
-		return LongField_List{}, err
-	}
-	return LongField_List{l}, nil
-}
-
-func (s LongField_List) At(i int) LongField           { return LongField{s.List.Struct(i)} }
-func (s LongField_List) Set(i int, v LongField) error { return s.List.SetStruct(i, v.Struct) }
-
-// LongField_Promise is a wrapper for a LongField promised by a client call.
-type LongField_Promise struct{ *capnp.Pipeline }
-
-func (p LongField_Promise) Struct() (LongField, error) {
+func (p Field_Promise) Struct() (Field, error) {
 	s, err := p.Pipeline.Struct()
-	return LongField{s}, err
+	return Field{s}, err
 }
 
 type Protocol struct{ capnp.Struct }
-type Protocol_ethernet Protocol
+type Protocol_ethernet2 Protocol
 type Protocol_ipv4 Protocol
 type Protocol_Which uint16
 
 const (
-	Protocol_Which_ethernet Protocol_Which = 0
-	Protocol_Which_ipv4     Protocol_Which = 1
+	Protocol_Which_ethernet2 Protocol_Which = 0
+	Protocol_Which_ipv4      Protocol_Which = 1
 )
 
 func (w Protocol_Which) String() string {
-	const s = "ethernetipv4"
+	const s = "ethernet2ipv4"
 	switch w {
-	case Protocol_Which_ethernet:
-		return s[0:8]
+	case Protocol_Which_ethernet2:
+		return s[0:9]
 	case Protocol_Which_ipv4:
-		return s[8:12]
+		return s[9:13]
 
 	}
 	return "Protocol_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
@@ -2323,119 +1890,103 @@ func ReadRootProtocol(msg *capnp.Message) (Protocol, error) {
 func (s Protocol) Which() Protocol_Which {
 	return Protocol_Which(s.Struct.Uint16(0))
 }
-func (s Protocol) Ethernet() Protocol_ethernet { return Protocol_ethernet(s) }
-func (s Protocol) SetEthernet() {
+func (s Protocol) Ethernet2() Protocol_ethernet2 { return Protocol_ethernet2(s) }
+func (s Protocol) SetEthernet2() {
 	s.Struct.SetUint16(0, 0)
 }
-func (s Protocol_ethernet) Source() (LongField, error) {
+func (s Protocol_ethernet2) Source() (Field, error) {
 	p, err := s.Struct.Ptr(0)
 	if err != nil {
-		return LongField{}, err
+		return Field{}, err
 	}
-	return LongField{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[0:80])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
-func (s Protocol_ethernet) HasSource() bool {
+func (s Protocol_ethernet2) HasSource() bool {
 	p, err := s.Struct.Ptr(0)
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ethernet) SetSource(v LongField) error {
+func (s Protocol_ethernet2) SetSource(v Field) error {
 	return s.Struct.SetPtr(0, v.Struct.ToPtr())
 }
 
 // NewSource sets the source field to a newly
-// allocated LongField struct, preferring placement in s's segment.
-func (s Protocol_ethernet) NewSource() (LongField, error) {
-	ss, err := NewLongField(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ethernet2) NewSource() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return LongField{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ethernet) Destination() (LongField, error) {
+func (s Protocol_ethernet2) Destination() (Field, error) {
 	p, err := s.Struct.Ptr(1)
 	if err != nil {
-		return LongField{}, err
+		return Field{}, err
 	}
-	return LongField{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[80:160])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
-func (s Protocol_ethernet) HasDestination() bool {
+func (s Protocol_ethernet2) HasDestination() bool {
 	p, err := s.Struct.Ptr(1)
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ethernet) SetDestination(v LongField) error {
+func (s Protocol_ethernet2) SetDestination(v Field) error {
 	return s.Struct.SetPtr(1, v.Struct.ToPtr())
 }
 
 // NewDestination sets the destination field to a newly
-// allocated LongField struct, preferring placement in s's segment.
-func (s Protocol_ethernet) NewDestination() (LongField, error) {
-	ss, err := NewLongField(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ethernet2) NewDestination() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return LongField{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(1, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ethernet) EthernetType() (Field16, error) {
+func (s Protocol_ethernet2) EthernetType() (Field, error) {
 	p, err := s.Struct.Ptr(2)
 	if err != nil {
-		return Field16{}, err
+		return Field{}, err
 	}
-	return Field16{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[160:240])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
-func (s Protocol_ethernet) HasEthernetType() bool {
+func (s Protocol_ethernet2) HasEthernetType() bool {
 	p, err := s.Struct.Ptr(2)
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ethernet) SetEthernetType(v Field16) error {
+func (s Protocol_ethernet2) SetEthernetType(v Field) error {
 	return s.Struct.SetPtr(2, v.Struct.ToPtr())
 }
 
 // NewEthernetType sets the ethernetType field to a newly
-// allocated Field16 struct, preferring placement in s's segment.
-func (s Protocol_ethernet) NewEthernetType() (Field16, error) {
-	ss, err := NewField16(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ethernet2) NewEthernetType() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field16{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(2, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s Protocol_ethernet) Length() (Field16, error) {
-	p, err := s.Struct.Ptr(3)
-	if err != nil {
-		return Field16{}, err
-	}
-	return Field16{Struct: p.Struct()}, nil
-}
-
-func (s Protocol_ethernet) HasLength() bool {
-	p, err := s.Struct.Ptr(3)
-	return p.IsValid() || err != nil
-}
-
-func (s Protocol_ethernet) SetLength(v Field16) error {
-	return s.Struct.SetPtr(3, v.Struct.ToPtr())
-}
-
-// NewLength sets the length field to a newly
-// allocated Field16 struct, preferring placement in s's segment.
-func (s Protocol_ethernet) NewLength() (Field16, error) {
-	ss, err := NewField16(s.Struct.Segment())
-	if err != nil {
-		return Field16{}, err
-	}
-	err = s.Struct.SetPtr(3, ss.Struct.ToPtr())
 	return ss, err
 }
 
@@ -2443,12 +1994,16 @@ func (s Protocol) Ipv4() Protocol_ipv4 { return Protocol_ipv4(s) }
 func (s Protocol) SetIpv4() {
 	s.Struct.SetUint16(0, 1)
 }
-func (s Protocol_ipv4) Version() (Field8, error) {
+func (s Protocol_ipv4) Version() (Field, error) {
 	p, err := s.Struct.Ptr(0)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[240:320])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasVersion() bool {
@@ -2456,27 +2011,31 @@ func (s Protocol_ipv4) HasVersion() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetVersion(v Field8) error {
+func (s Protocol_ipv4) SetVersion(v Field) error {
 	return s.Struct.SetPtr(0, v.Struct.ToPtr())
 }
 
 // NewVersion sets the version field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewVersion() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewVersion() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Ihl() (Field8, error) {
+func (s Protocol_ipv4) Ihl() (Field, error) {
 	p, err := s.Struct.Ptr(1)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[320:400])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasIhl() bool {
@@ -2484,27 +2043,31 @@ func (s Protocol_ipv4) HasIhl() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetIhl(v Field8) error {
+func (s Protocol_ipv4) SetIhl(v Field) error {
 	return s.Struct.SetPtr(1, v.Struct.ToPtr())
 }
 
 // NewIhl sets the ihl field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewIhl() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewIhl() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(1, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Tos() (Field8, error) {
+func (s Protocol_ipv4) Tos() (Field, error) {
 	p, err := s.Struct.Ptr(2)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[400:480])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasTos() bool {
@@ -2512,27 +2075,31 @@ func (s Protocol_ipv4) HasTos() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetTos(v Field8) error {
+func (s Protocol_ipv4) SetTos(v Field) error {
 	return s.Struct.SetPtr(2, v.Struct.ToPtr())
 }
 
 // NewTos sets the tos field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewTos() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewTos() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(2, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Length() (Field8, error) {
+func (s Protocol_ipv4) Length() (Field, error) {
 	p, err := s.Struct.Ptr(3)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[480:560])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasLength() bool {
@@ -2540,27 +2107,31 @@ func (s Protocol_ipv4) HasLength() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetLength(v Field8) error {
+func (s Protocol_ipv4) SetLength(v Field) error {
 	return s.Struct.SetPtr(3, v.Struct.ToPtr())
 }
 
 // NewLength sets the length field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewLength() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewLength() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(3, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Id() (Field8, error) {
+func (s Protocol_ipv4) Id() (Field, error) {
 	p, err := s.Struct.Ptr(4)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[560:640])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasId() bool {
@@ -2568,27 +2139,31 @@ func (s Protocol_ipv4) HasId() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetId(v Field8) error {
+func (s Protocol_ipv4) SetId(v Field) error {
 	return s.Struct.SetPtr(4, v.Struct.ToPtr())
 }
 
 // NewId sets the id field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewId() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewId() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(4, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Flags() (Field8, error) {
+func (s Protocol_ipv4) Flags() (Field, error) {
 	p, err := s.Struct.Ptr(5)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[640:720])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasFlags() bool {
@@ -2596,27 +2171,31 @@ func (s Protocol_ipv4) HasFlags() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetFlags(v Field8) error {
+func (s Protocol_ipv4) SetFlags(v Field) error {
 	return s.Struct.SetPtr(5, v.Struct.ToPtr())
 }
 
 // NewFlags sets the flags field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewFlags() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewFlags() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(5, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) FragOffset() (Field16, error) {
+func (s Protocol_ipv4) FragOffset() (Field, error) {
 	p, err := s.Struct.Ptr(6)
 	if err != nil {
-		return Field16{}, err
+		return Field{}, err
 	}
-	return Field16{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[720:800])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasFragOffset() bool {
@@ -2624,27 +2203,31 @@ func (s Protocol_ipv4) HasFragOffset() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetFragOffset(v Field16) error {
+func (s Protocol_ipv4) SetFragOffset(v Field) error {
 	return s.Struct.SetPtr(6, v.Struct.ToPtr())
 }
 
 // NewFragOffset sets the fragOffset field to a newly
-// allocated Field16 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewFragOffset() (Field16, error) {
-	ss, err := NewField16(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewFragOffset() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field16{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(6, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Ttl() (Field8, error) {
+func (s Protocol_ipv4) Ttl() (Field, error) {
 	p, err := s.Struct.Ptr(7)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[800:880])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasTtl() bool {
@@ -2652,27 +2235,31 @@ func (s Protocol_ipv4) HasTtl() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetTtl(v Field8) error {
+func (s Protocol_ipv4) SetTtl(v Field) error {
 	return s.Struct.SetPtr(7, v.Struct.ToPtr())
 }
 
 // NewTtl sets the ttl field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewTtl() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewTtl() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(7, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Protocol() (Field8, error) {
+func (s Protocol_ipv4) Protocol() (Field, error) {
 	p, err := s.Struct.Ptr(8)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[880:960])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasProtocol() bool {
@@ -2680,27 +2267,31 @@ func (s Protocol_ipv4) HasProtocol() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetProtocol(v Field8) error {
+func (s Protocol_ipv4) SetProtocol(v Field) error {
 	return s.Struct.SetPtr(8, v.Struct.ToPtr())
 }
 
 // NewProtocol sets the protocol field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewProtocol() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewProtocol() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(8, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Checksum() (Field8, error) {
+func (s Protocol_ipv4) Checksum() (Field, error) {
 	p, err := s.Struct.Ptr(9)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[960:1040])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasChecksum() bool {
@@ -2708,27 +2299,31 @@ func (s Protocol_ipv4) HasChecksum() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetChecksum(v Field8) error {
+func (s Protocol_ipv4) SetChecksum(v Field) error {
 	return s.Struct.SetPtr(9, v.Struct.ToPtr())
 }
 
 // NewChecksum sets the checksum field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewChecksum() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewChecksum() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(9, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Srcip() (Field32, error) {
+func (s Protocol_ipv4) Srcip() (Field, error) {
 	p, err := s.Struct.Ptr(10)
 	if err != nil {
-		return Field32{}, err
+		return Field{}, err
 	}
-	return Field32{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[1040:1120])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasSrcip() bool {
@@ -2736,27 +2331,31 @@ func (s Protocol_ipv4) HasSrcip() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetSrcip(v Field32) error {
+func (s Protocol_ipv4) SetSrcip(v Field) error {
 	return s.Struct.SetPtr(10, v.Struct.ToPtr())
 }
 
 // NewSrcip sets the srcip field to a newly
-// allocated Field32 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewSrcip() (Field32, error) {
-	ss, err := NewField32(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewSrcip() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field32{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(10, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Dstip() (Field32, error) {
+func (s Protocol_ipv4) Dstip() (Field, error) {
 	p, err := s.Struct.Ptr(11)
 	if err != nil {
-		return Field32{}, err
+		return Field{}, err
 	}
-	return Field32{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[1120:1200])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasDstip() bool {
@@ -2764,27 +2363,31 @@ func (s Protocol_ipv4) HasDstip() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetDstip(v Field32) error {
+func (s Protocol_ipv4) SetDstip(v Field) error {
 	return s.Struct.SetPtr(11, v.Struct.ToPtr())
 }
 
 // NewDstip sets the dstip field to a newly
-// allocated Field32 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewDstip() (Field32, error) {
-	ss, err := NewField32(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewDstip() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field32{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(11, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Options() (LongField, error) {
+func (s Protocol_ipv4) Options() (Field, error) {
 	p, err := s.Struct.Ptr(12)
 	if err != nil {
-		return LongField{}, err
+		return Field{}, err
 	}
-	return LongField{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[1200:1280])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasOptions() bool {
@@ -2792,27 +2395,31 @@ func (s Protocol_ipv4) HasOptions() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetOptions(v LongField) error {
+func (s Protocol_ipv4) SetOptions(v Field) error {
 	return s.Struct.SetPtr(12, v.Struct.ToPtr())
 }
 
 // NewOptions sets the options field to a newly
-// allocated LongField struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewOptions() (LongField, error) {
-	ss, err := NewLongField(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewOptions() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return LongField{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(12, ss.Struct.ToPtr())
 	return ss, err
 }
 
-func (s Protocol_ipv4) Padding() (Field8, error) {
+func (s Protocol_ipv4) Padding() (Field, error) {
 	p, err := s.Struct.Ptr(13)
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
-	return Field8{Struct: p.Struct()}, nil
+	ss, err := p.StructDefault(x_ef97cf4069588836[1280:1360])
+	if err != nil {
+		return Field{}, err
+	}
+	return Field{Struct: ss}, nil
 }
 
 func (s Protocol_ipv4) HasPadding() bool {
@@ -2820,16 +2427,16 @@ func (s Protocol_ipv4) HasPadding() bool {
 	return p.IsValid() || err != nil
 }
 
-func (s Protocol_ipv4) SetPadding(v Field8) error {
+func (s Protocol_ipv4) SetPadding(v Field) error {
 	return s.Struct.SetPtr(13, v.Struct.ToPtr())
 }
 
 // NewPadding sets the padding field to a newly
-// allocated Field8 struct, preferring placement in s's segment.
-func (s Protocol_ipv4) NewPadding() (Field8, error) {
-	ss, err := NewField8(s.Struct.Segment())
+// allocated Field struct, preferring placement in s's segment.
+func (s Protocol_ipv4) NewPadding() (Field, error) {
+	ss, err := NewField(s.Struct.Segment())
 	if err != nil {
-		return Field8{}, err
+		return Field{}, err
 	}
 	err = s.Struct.SetPtr(13, ss.Struct.ToPtr())
 	return ss, err
@@ -2858,32 +2465,28 @@ func (p Protocol_Promise) Struct() (Protocol, error) {
 	return Protocol{s}, err
 }
 
-func (p Protocol_Promise) Ethernet() Protocol_ethernet_Promise {
-	return Protocol_ethernet_Promise{p.Pipeline}
+func (p Protocol_Promise) Ethernet2() Protocol_ethernet2_Promise {
+	return Protocol_ethernet2_Promise{p.Pipeline}
 }
 
-// Protocol_ethernet_Promise is a wrapper for a Protocol_ethernet promised by a client call.
-type Protocol_ethernet_Promise struct{ *capnp.Pipeline }
+// Protocol_ethernet2_Promise is a wrapper for a Protocol_ethernet2 promised by a client call.
+type Protocol_ethernet2_Promise struct{ *capnp.Pipeline }
 
-func (p Protocol_ethernet_Promise) Struct() (Protocol_ethernet, error) {
+func (p Protocol_ethernet2_Promise) Struct() (Protocol_ethernet2, error) {
 	s, err := p.Pipeline.Struct()
-	return Protocol_ethernet{s}, err
+	return Protocol_ethernet2{s}, err
 }
 
-func (p Protocol_ethernet_Promise) Source() LongField_Promise {
-	return LongField_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
+func (p Protocol_ethernet2_Promise) Source() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(0, x_ef97cf4069588836[1360:1440])}
 }
 
-func (p Protocol_ethernet_Promise) Destination() LongField_Promise {
-	return LongField_Promise{Pipeline: p.Pipeline.GetPipeline(1)}
+func (p Protocol_ethernet2_Promise) Destination() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(1, x_ef97cf4069588836[1440:1520])}
 }
 
-func (p Protocol_ethernet_Promise) EthernetType() Field16_Promise {
-	return Field16_Promise{Pipeline: p.Pipeline.GetPipeline(2)}
-}
-
-func (p Protocol_ethernet_Promise) Length() Field16_Promise {
-	return Field16_Promise{Pipeline: p.Pipeline.GetPipeline(3)}
+func (p Protocol_ethernet2_Promise) EthernetType() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(2, x_ef97cf4069588836[1520:1600])}
 }
 
 func (p Protocol_Promise) Ipv4() Protocol_ipv4_Promise { return Protocol_ipv4_Promise{p.Pipeline} }
@@ -2896,58 +2499,401 @@ func (p Protocol_ipv4_Promise) Struct() (Protocol_ipv4, error) {
 	return Protocol_ipv4{s}, err
 }
 
-func (p Protocol_ipv4_Promise) Version() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
+func (p Protocol_ipv4_Promise) Version() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(0, x_ef97cf4069588836[1600:1680])}
 }
 
-func (p Protocol_ipv4_Promise) Ihl() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(1)}
+func (p Protocol_ipv4_Promise) Ihl() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(1, x_ef97cf4069588836[1680:1760])}
 }
 
-func (p Protocol_ipv4_Promise) Tos() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(2)}
+func (p Protocol_ipv4_Promise) Tos() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(2, x_ef97cf4069588836[1760:1840])}
 }
 
-func (p Protocol_ipv4_Promise) Length() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(3)}
+func (p Protocol_ipv4_Promise) Length() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(3, x_ef97cf4069588836[1840:1920])}
 }
 
-func (p Protocol_ipv4_Promise) Id() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(4)}
+func (p Protocol_ipv4_Promise) Id() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(4, x_ef97cf4069588836[1920:2000])}
 }
 
-func (p Protocol_ipv4_Promise) Flags() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(5)}
+func (p Protocol_ipv4_Promise) Flags() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(5, x_ef97cf4069588836[2000:2080])}
 }
 
-func (p Protocol_ipv4_Promise) FragOffset() Field16_Promise {
-	return Field16_Promise{Pipeline: p.Pipeline.GetPipeline(6)}
+func (p Protocol_ipv4_Promise) FragOffset() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(6, x_ef97cf4069588836[2080:2160])}
 }
 
-func (p Protocol_ipv4_Promise) Ttl() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(7)}
+func (p Protocol_ipv4_Promise) Ttl() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(7, x_ef97cf4069588836[2160:2240])}
 }
 
-func (p Protocol_ipv4_Promise) Protocol() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(8)}
+func (p Protocol_ipv4_Promise) Protocol() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(8, x_ef97cf4069588836[2240:2320])}
 }
 
-func (p Protocol_ipv4_Promise) Checksum() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(9)}
+func (p Protocol_ipv4_Promise) Checksum() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(9, x_ef97cf4069588836[2320:2400])}
 }
 
-func (p Protocol_ipv4_Promise) Srcip() Field32_Promise {
-	return Field32_Promise{Pipeline: p.Pipeline.GetPipeline(10)}
+func (p Protocol_ipv4_Promise) Srcip() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(10, x_ef97cf4069588836[2400:2480])}
 }
 
-func (p Protocol_ipv4_Promise) Dstip() Field32_Promise {
-	return Field32_Promise{Pipeline: p.Pipeline.GetPipeline(11)}
+func (p Protocol_ipv4_Promise) Dstip() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(11, x_ef97cf4069588836[2480:2560])}
 }
 
-func (p Protocol_ipv4_Promise) Options() LongField_Promise {
-	return LongField_Promise{Pipeline: p.Pipeline.GetPipeline(12)}
+func (p Protocol_ipv4_Promise) Options() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(12, x_ef97cf4069588836[2560:2640])}
 }
 
-func (p Protocol_ipv4_Promise) Padding() Field8_Promise {
-	return Field8_Promise{Pipeline: p.Pipeline.GetPipeline(13)}
+func (p Protocol_ipv4_Promise) Padding() Field_Promise {
+	return Field_Promise{Pipeline: p.Pipeline.GetPipelineDefault(13, x_ef97cf4069588836[2640:2720])}
+}
+
+var x_ef97cf4069588836 = []byte{
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 255, 255, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 50, 0, 0, 0,
+	255, 255, 255, 255, 255, 255, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 255, 255, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 18, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 18, 0, 0, 0,
+	8, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	4, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	5, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 42, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	97, 117, 116, 111, 0, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 18, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 18, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 42, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	97, 117, 116, 111, 0, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 42, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	97, 117, 116, 111, 0, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 34, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 34, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 34, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 34, 0, 0, 0,
+	255, 255, 255, 255, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 255, 255, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 50, 0, 0, 0,
+	255, 255, 255, 255, 255, 255, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 255, 255, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 18, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 18, 0, 0, 0,
+	8, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	4, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	5, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 42, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	97, 117, 116, 111, 0, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 18, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 18, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 42, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	97, 117, 116, 111, 0, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 42, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	97, 117, 116, 111, 0, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 34, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 34, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 34, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 34, 0, 0, 0,
+	255, 255, 255, 255, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 255, 255, 255, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	0, 0, 0, 0, 1, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	13, 0, 0, 0, 10, 0, 0, 0,
+	13, 0, 0, 0, 50, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 0, 0, 0, 10, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	102, 105, 120, 101, 100, 0, 0, 0,
+	255, 0, 0, 0, 0, 0, 0, 0,
 }
