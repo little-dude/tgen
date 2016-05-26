@@ -20,8 +20,8 @@ type Field8 struct {
 	mask      uint8
 }
 
-func (field Field8) SetValue(index uint) {
-	if uint8(index)%field.count == 0 {
+func (field *Field8) SetValue(index uint) {
+	if index%uint(field.count) == 0 {
 		field.value = field.initValue
 		return
 	}
@@ -35,15 +35,15 @@ func (field Field8) SetValue(index uint) {
 	}
 }
 
-func (field Field8) increment() {
+func (field *Field8) increment() {
 	field.value = (field.value & (^field.mask)) | ((field.value + field.step) & field.mask)
 }
 
-func (field Field8) decrement() {
+func (field *Field8) decrement() {
 	field.value = (field.value & (^field.mask)) | ((field.value - field.step) & field.mask)
 }
 
-func (field Field8) randomize() {
+func (field *Field8) randomize() {
 	field.value = uint8(rand.Int31()) & field.mask
 }
 
@@ -58,7 +58,7 @@ type Field16 struct {
 }
 
 func (field Field16) SetValue(index uint) {
-	if uint16(index)%field.count == 0 {
+	if index%uint(field.count) == 0 {
 		field.value = field.initValue
 		return
 	}
@@ -167,7 +167,7 @@ type LongField struct {
 	mask      []byte
 }
 
-func (field LongField) SetValue(index uint64) {
+func (field *LongField) SetValue(index uint) {
 	if uint64(index)%field.count == 0 {
 		field.value = field.initValue
 		return
@@ -184,13 +184,13 @@ func (field LongField) SetValue(index uint64) {
 	}
 }
 
-func (field LongField) randomize() {
+func (field *LongField) randomize() {
 	for i := len(field.value) - 1; i >= 0; i-- {
-		field.value[i] = uint8(rand.Intn(256))
+		field.value[i] = byte(rand.Intn(256))
 	}
 }
 
-func sub(a, b uint8) (result uint8, overflow bool) {
+func sub(a, b byte) (result byte, overflow bool) {
 	if b > a {
 		return 255 - ((b - a) - 1), true
 	} else {
@@ -198,9 +198,9 @@ func sub(a, b uint8) (result uint8, overflow bool) {
 	}
 }
 
-func (field LongField) decrement() {
+func (field *LongField) decrement() {
 	overflow := false
-	var newValue uint8
+	var newValue byte
 	for i := len(field.value) - 1; i >= 0; i-- {
 		if field.mask[i] == 0 {
 			overflow = false
@@ -220,16 +220,16 @@ func (field LongField) decrement() {
 	}
 }
 
-func add(a, b uint8) (result, overflow uint8) {
+func add(a, b byte) (result, overflow byte) {
 	res := uint16(a) + uint16(b)
-	result = uint8(res & 255)
-	overflow = uint8(res >> 8)
+	result = byte(res & 255)
+	overflow = byte(res >> 8)
 	return
 }
 
-func (field LongField) increment() {
-	overflow := uint8(0)
-	var newValue, tmpOverflow uint8
+func (field *LongField) increment() {
+	overflow := byte(0)
+	var newValue, tmpOverflow byte
 	for i := len(field.value) - 1; i >= 0; i-- {
 		if field.mask[i] == 0 {
 			overflow = 0
