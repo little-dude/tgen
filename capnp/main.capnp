@@ -29,8 +29,8 @@ interface Port {
 interface Stream {
     getConfig @0 ()                       -> (config :Config);
     setConfig @1 (config :Config)         -> ();
-    # getLayers @2 ()                       -> (layers :List(Protocol));
-    # setLayers @3 (layers :List(Protocol)) -> ();
+    getLayers @2 ()                       -> (layers :List(Protocol));
+    setLayers @3 (layers :List(Protocol)) -> ();
     struct Config {
         name            @0 :Text;
         loop            @1 :Bool;

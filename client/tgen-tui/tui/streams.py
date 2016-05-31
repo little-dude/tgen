@@ -1,6 +1,7 @@
 import npyscreen as nps
 import schemas
 
+
 class Form(nps.Form):
 
     def __init__(self, port, *args, **kwargs):
@@ -10,7 +11,7 @@ class Form(nps.Form):
             "q":               self.previous_view,
             "a":               self.add_stream,
             "d":               self.delete_stream,
-            "c":               self.edit_stream
+            "e":               self.edit_stream,
         })
         self.current_stream = None
 
@@ -77,6 +78,26 @@ class LayersWg(nps.BoxTitle):
     def __init__(self, *args, **kwargs):
         super(LayersWg, self).__init__(*args, **kwargs)
         self.name = "layers"
+        self.add_handlers({
+            "q":               self.parent.previous_view,
+            "a":               self.add_layer,
+            # "d":               self.delete_layer,
+            # "e":               self.edit_layer,
+        })
+
+    def add_layer(self, *args, **kwargs):
+        stream = self.parent.current_stream
+        stream.add_layer(0, Ethernet2())
+
+    def update(self, *args, **kwargs):
+        stream = self.parent.current_stream
+        if stream is not None:
+            self.values = []
+            for layer in stream.layers:
+                self.values.append(layer.__class__.__name__)
+        else:
+            self.values = []
+        super(LayersWg, self).update(*args, **kwargs)
 
 
 class ConfigWg(nps.BoxTitle):
@@ -126,6 +147,7 @@ class Stream(object):
     def __init__(self, capnp_stream):
         self.capnp_stream = capnp_stream
         self.get_config()
+        self.get_layers()
 
     def get_config(self):
         res = self.capnp_stream.getConfig().wait()
@@ -140,8 +162,55 @@ class Stream(object):
         cfg.packetsPerSec = self.packets_per_sec
         self.capnp_stream.setConfig(cfg).wait()
 
+    def add_layer(self, position, layer):
+        self.layers.insert(position, layer)
+        capnp_layers = []
+        msg = schemas.Protocol.new_message()
+        for layer in self.layers:
+            layer.to_capnp(msg)
+            capnp_layers.append(msg)
+        self.capnp_stream.setLayers(capnp_layers).wait()
+
+    def get_layers(self):
+        self.layers = []
+        res = self.capnp_stream.getLayers().wait()
+        for capnp_layer in res.layers:
+            self.layers.append(layer_factory(capnp_layer))
+
+
+class Layer(object):
+
+    def __init__(self, capnp_layer):
+        self.capnp_layer = capnp_layer
+
+
+class Ethernet2(Layer):
+
+    def __init__(self, capnp_layer=None):
+        if capnp_layer is None:
+            capnp_layer = schemas.Protocol.new_message().init('ethernet2')
+        super(Ethernet2, self).__init__(capnp_layer)
+        self.source = self.capnp_layer.source
+        self.destination = self.capnp_layer.destination
+        self.ethernet_type = self.capnp_layer.ethernetType
+
+    def to_capnp(self, msg):
+        eth = msg.init('ethernet2')
+        eth.source = self.source
+        eth.destination = self.destination
+        eth.ethernetType = self.ethernet_type
+
+
+def layer_factory(capnp_layer):
+    which = capnp_layer.which()
+    if which == 'ethernet2':
+        return Ethernet2(capnp_layer.ethernet2)
+    else:
+        raise Exception('unknown {}'.format(which))
+
 
 class ConfigForm(nps.ActionPopup):
+
     def __init__(self, stream, *args, **kwargs):
         self.stream = stream
         super(ConfigForm, self).__init__(*args, **kwargs)

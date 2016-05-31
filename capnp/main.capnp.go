@@ -1246,11 +1246,55 @@ func (c Stream) SetConfig(ctx context.Context, params func(Stream_setConfig_Para
 	}
 	return Stream_setConfig_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
 }
+func (c Stream) GetLayers(ctx context.Context, params func(Stream_getLayers_Params) error, opts ...capnp.CallOption) Stream_getLayers_Results_Promise {
+	if c.Client == nil {
+		return Stream_getLayers_Results_Promise{Pipeline: capnp.NewPipeline(capnp.ErrorAnswer(capnp.ErrNullClient))}
+	}
+	call := &capnp.Call{
+		Ctx: ctx,
+		Method: capnp.Method{
+			InterfaceID:   0xded84ab707587279,
+			MethodID:      2,
+			InterfaceName: "main.capnp:Stream",
+			MethodName:    "getLayers",
+		},
+		Options: capnp.NewCallOptions(opts),
+	}
+	if params != nil {
+		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 0}
+		call.ParamsFunc = func(s capnp.Struct) error { return params(Stream_getLayers_Params{Struct: s}) }
+	}
+	return Stream_getLayers_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
+}
+func (c Stream) SetLayers(ctx context.Context, params func(Stream_setLayers_Params) error, opts ...capnp.CallOption) Stream_setLayers_Results_Promise {
+	if c.Client == nil {
+		return Stream_setLayers_Results_Promise{Pipeline: capnp.NewPipeline(capnp.ErrorAnswer(capnp.ErrNullClient))}
+	}
+	call := &capnp.Call{
+		Ctx: ctx,
+		Method: capnp.Method{
+			InterfaceID:   0xded84ab707587279,
+			MethodID:      3,
+			InterfaceName: "main.capnp:Stream",
+			MethodName:    "setLayers",
+		},
+		Options: capnp.NewCallOptions(opts),
+	}
+	if params != nil {
+		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 1}
+		call.ParamsFunc = func(s capnp.Struct) error { return params(Stream_setLayers_Params{Struct: s}) }
+	}
+	return Stream_setLayers_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
+}
 
 type Stream_Server interface {
 	GetConfig(Stream_getConfig) error
 
 	SetConfig(Stream_setConfig) error
+
+	GetLayers(Stream_getLayers) error
+
+	SetLayers(Stream_setLayers) error
 }
 
 func Stream_ServerToClient(s Stream_Server) Stream {
@@ -1260,7 +1304,7 @@ func Stream_ServerToClient(s Stream_Server) Stream {
 
 func Stream_Methods(methods []server.Method, s Stream_Server) []server.Method {
 	if cap(methods) == 0 {
-		methods = make([]server.Method, 0, 2)
+		methods = make([]server.Method, 0, 4)
 	}
 
 	methods = append(methods, server.Method{
@@ -1291,6 +1335,34 @@ func Stream_Methods(methods []server.Method, s Stream_Server) []server.Method {
 		ResultsSize: capnp.ObjectSize{DataSize: 0, PointerCount: 0},
 	})
 
+	methods = append(methods, server.Method{
+		Method: capnp.Method{
+			InterfaceID:   0xded84ab707587279,
+			MethodID:      2,
+			InterfaceName: "main.capnp:Stream",
+			MethodName:    "getLayers",
+		},
+		Impl: func(c context.Context, opts capnp.CallOptions, p, r capnp.Struct) error {
+			call := Stream_getLayers{c, opts, Stream_getLayers_Params{Struct: p}, Stream_getLayers_Results{Struct: r}}
+			return s.GetLayers(call)
+		},
+		ResultsSize: capnp.ObjectSize{DataSize: 0, PointerCount: 1},
+	})
+
+	methods = append(methods, server.Method{
+		Method: capnp.Method{
+			InterfaceID:   0xded84ab707587279,
+			MethodID:      3,
+			InterfaceName: "main.capnp:Stream",
+			MethodName:    "setLayers",
+		},
+		Impl: func(c context.Context, opts capnp.CallOptions, p, r capnp.Struct) error {
+			call := Stream_setLayers{c, opts, Stream_setLayers_Params{Struct: p}, Stream_setLayers_Results{Struct: r}}
+			return s.SetLayers(call)
+		},
+		ResultsSize: capnp.ObjectSize{DataSize: 0, PointerCount: 0},
+	})
+
 	return methods
 }
 
@@ -1308,6 +1380,22 @@ type Stream_setConfig struct {
 	Options capnp.CallOptions
 	Params  Stream_setConfig_Params
 	Results Stream_setConfig_Results
+}
+
+// Stream_getLayers holds the arguments for a server call to Stream.getLayers.
+type Stream_getLayers struct {
+	Ctx     context.Context
+	Options capnp.CallOptions
+	Params  Stream_getLayers_Params
+	Results Stream_getLayers_Results
+}
+
+// Stream_setLayers holds the arguments for a server call to Stream.setLayers.
+type Stream_setLayers struct {
+	Ctx     context.Context
+	Options capnp.CallOptions
+	Params  Stream_setLayers_Params
+	Results Stream_setLayers_Results
 }
 
 type Stream_Config struct{ capnp.Struct }
@@ -1687,6 +1775,272 @@ type Stream_setConfig_Results_Promise struct{ *capnp.Pipeline }
 func (p Stream_setConfig_Results_Promise) Struct() (Stream_setConfig_Results, error) {
 	s, err := p.Pipeline.Struct()
 	return Stream_setConfig_Results{s}, err
+}
+
+type Stream_getLayers_Params struct{ capnp.Struct }
+
+func NewStream_getLayers_Params(s *capnp.Segment) (Stream_getLayers_Params, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	if err != nil {
+		return Stream_getLayers_Params{}, err
+	}
+	return Stream_getLayers_Params{st}, nil
+}
+
+func NewRootStream_getLayers_Params(s *capnp.Segment) (Stream_getLayers_Params, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	if err != nil {
+		return Stream_getLayers_Params{}, err
+	}
+	return Stream_getLayers_Params{st}, nil
+}
+
+func ReadRootStream_getLayers_Params(msg *capnp.Message) (Stream_getLayers_Params, error) {
+	root, err := msg.RootPtr()
+	if err != nil {
+		return Stream_getLayers_Params{}, err
+	}
+	return Stream_getLayers_Params{root.Struct()}, nil
+}
+
+// Stream_getLayers_Params_List is a list of Stream_getLayers_Params.
+type Stream_getLayers_Params_List struct{ capnp.List }
+
+// NewStream_getLayers_Params creates a new list of Stream_getLayers_Params.
+func NewStream_getLayers_Params_List(s *capnp.Segment, sz int32) (Stream_getLayers_Params_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0}, sz)
+	if err != nil {
+		return Stream_getLayers_Params_List{}, err
+	}
+	return Stream_getLayers_Params_List{l}, nil
+}
+
+func (s Stream_getLayers_Params_List) At(i int) Stream_getLayers_Params {
+	return Stream_getLayers_Params{s.List.Struct(i)}
+}
+func (s Stream_getLayers_Params_List) Set(i int, v Stream_getLayers_Params) error {
+	return s.List.SetStruct(i, v.Struct)
+}
+
+// Stream_getLayers_Params_Promise is a wrapper for a Stream_getLayers_Params promised by a client call.
+type Stream_getLayers_Params_Promise struct{ *capnp.Pipeline }
+
+func (p Stream_getLayers_Params_Promise) Struct() (Stream_getLayers_Params, error) {
+	s, err := p.Pipeline.Struct()
+	return Stream_getLayers_Params{s}, err
+}
+
+type Stream_getLayers_Results struct{ capnp.Struct }
+
+func NewStream_getLayers_Results(s *capnp.Segment) (Stream_getLayers_Results, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	if err != nil {
+		return Stream_getLayers_Results{}, err
+	}
+	return Stream_getLayers_Results{st}, nil
+}
+
+func NewRootStream_getLayers_Results(s *capnp.Segment) (Stream_getLayers_Results, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	if err != nil {
+		return Stream_getLayers_Results{}, err
+	}
+	return Stream_getLayers_Results{st}, nil
+}
+
+func ReadRootStream_getLayers_Results(msg *capnp.Message) (Stream_getLayers_Results, error) {
+	root, err := msg.RootPtr()
+	if err != nil {
+		return Stream_getLayers_Results{}, err
+	}
+	return Stream_getLayers_Results{root.Struct()}, nil
+}
+func (s Stream_getLayers_Results) Layers() (Protocol_List, error) {
+	p, err := s.Struct.Ptr(0)
+	if err != nil {
+		return Protocol_List{}, err
+	}
+	return Protocol_List{List: p.List()}, nil
+}
+
+func (s Stream_getLayers_Results) HasLayers() bool {
+	p, err := s.Struct.Ptr(0)
+	return p.IsValid() || err != nil
+}
+
+func (s Stream_getLayers_Results) SetLayers(v Protocol_List) error {
+	return s.Struct.SetPtr(0, v.List.ToPtr())
+}
+
+// NewLayers sets the layers field to a newly
+// allocated Protocol_List, preferring placement in s's segment.
+func (s Stream_getLayers_Results) NewLayers(n int32) (Protocol_List, error) {
+	l, err := NewProtocol_List(s.Struct.Segment(), n)
+	if err != nil {
+		return Protocol_List{}, err
+	}
+	err = s.Struct.SetPtr(0, l.List.ToPtr())
+	return l, err
+}
+
+// Stream_getLayers_Results_List is a list of Stream_getLayers_Results.
+type Stream_getLayers_Results_List struct{ capnp.List }
+
+// NewStream_getLayers_Results creates a new list of Stream_getLayers_Results.
+func NewStream_getLayers_Results_List(s *capnp.Segment, sz int32) (Stream_getLayers_Results_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
+	if err != nil {
+		return Stream_getLayers_Results_List{}, err
+	}
+	return Stream_getLayers_Results_List{l}, nil
+}
+
+func (s Stream_getLayers_Results_List) At(i int) Stream_getLayers_Results {
+	return Stream_getLayers_Results{s.List.Struct(i)}
+}
+func (s Stream_getLayers_Results_List) Set(i int, v Stream_getLayers_Results) error {
+	return s.List.SetStruct(i, v.Struct)
+}
+
+// Stream_getLayers_Results_Promise is a wrapper for a Stream_getLayers_Results promised by a client call.
+type Stream_getLayers_Results_Promise struct{ *capnp.Pipeline }
+
+func (p Stream_getLayers_Results_Promise) Struct() (Stream_getLayers_Results, error) {
+	s, err := p.Pipeline.Struct()
+	return Stream_getLayers_Results{s}, err
+}
+
+type Stream_setLayers_Params struct{ capnp.Struct }
+
+func NewStream_setLayers_Params(s *capnp.Segment) (Stream_setLayers_Params, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	if err != nil {
+		return Stream_setLayers_Params{}, err
+	}
+	return Stream_setLayers_Params{st}, nil
+}
+
+func NewRootStream_setLayers_Params(s *capnp.Segment) (Stream_setLayers_Params, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
+	if err != nil {
+		return Stream_setLayers_Params{}, err
+	}
+	return Stream_setLayers_Params{st}, nil
+}
+
+func ReadRootStream_setLayers_Params(msg *capnp.Message) (Stream_setLayers_Params, error) {
+	root, err := msg.RootPtr()
+	if err != nil {
+		return Stream_setLayers_Params{}, err
+	}
+	return Stream_setLayers_Params{root.Struct()}, nil
+}
+func (s Stream_setLayers_Params) Layers() (Protocol_List, error) {
+	p, err := s.Struct.Ptr(0)
+	if err != nil {
+		return Protocol_List{}, err
+	}
+	return Protocol_List{List: p.List()}, nil
+}
+
+func (s Stream_setLayers_Params) HasLayers() bool {
+	p, err := s.Struct.Ptr(0)
+	return p.IsValid() || err != nil
+}
+
+func (s Stream_setLayers_Params) SetLayers(v Protocol_List) error {
+	return s.Struct.SetPtr(0, v.List.ToPtr())
+}
+
+// NewLayers sets the layers field to a newly
+// allocated Protocol_List, preferring placement in s's segment.
+func (s Stream_setLayers_Params) NewLayers(n int32) (Protocol_List, error) {
+	l, err := NewProtocol_List(s.Struct.Segment(), n)
+	if err != nil {
+		return Protocol_List{}, err
+	}
+	err = s.Struct.SetPtr(0, l.List.ToPtr())
+	return l, err
+}
+
+// Stream_setLayers_Params_List is a list of Stream_setLayers_Params.
+type Stream_setLayers_Params_List struct{ capnp.List }
+
+// NewStream_setLayers_Params creates a new list of Stream_setLayers_Params.
+func NewStream_setLayers_Params_List(s *capnp.Segment, sz int32) (Stream_setLayers_Params_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
+	if err != nil {
+		return Stream_setLayers_Params_List{}, err
+	}
+	return Stream_setLayers_Params_List{l}, nil
+}
+
+func (s Stream_setLayers_Params_List) At(i int) Stream_setLayers_Params {
+	return Stream_setLayers_Params{s.List.Struct(i)}
+}
+func (s Stream_setLayers_Params_List) Set(i int, v Stream_setLayers_Params) error {
+	return s.List.SetStruct(i, v.Struct)
+}
+
+// Stream_setLayers_Params_Promise is a wrapper for a Stream_setLayers_Params promised by a client call.
+type Stream_setLayers_Params_Promise struct{ *capnp.Pipeline }
+
+func (p Stream_setLayers_Params_Promise) Struct() (Stream_setLayers_Params, error) {
+	s, err := p.Pipeline.Struct()
+	return Stream_setLayers_Params{s}, err
+}
+
+type Stream_setLayers_Results struct{ capnp.Struct }
+
+func NewStream_setLayers_Results(s *capnp.Segment) (Stream_setLayers_Results, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	if err != nil {
+		return Stream_setLayers_Results{}, err
+	}
+	return Stream_setLayers_Results{st}, nil
+}
+
+func NewRootStream_setLayers_Results(s *capnp.Segment) (Stream_setLayers_Results, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	if err != nil {
+		return Stream_setLayers_Results{}, err
+	}
+	return Stream_setLayers_Results{st}, nil
+}
+
+func ReadRootStream_setLayers_Results(msg *capnp.Message) (Stream_setLayers_Results, error) {
+	root, err := msg.RootPtr()
+	if err != nil {
+		return Stream_setLayers_Results{}, err
+	}
+	return Stream_setLayers_Results{root.Struct()}, nil
+}
+
+// Stream_setLayers_Results_List is a list of Stream_setLayers_Results.
+type Stream_setLayers_Results_List struct{ capnp.List }
+
+// NewStream_setLayers_Results creates a new list of Stream_setLayers_Results.
+func NewStream_setLayers_Results_List(s *capnp.Segment, sz int32) (Stream_setLayers_Results_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0}, sz)
+	if err != nil {
+		return Stream_setLayers_Results_List{}, err
+	}
+	return Stream_setLayers_Results_List{l}, nil
+}
+
+func (s Stream_setLayers_Results_List) At(i int) Stream_setLayers_Results {
+	return Stream_setLayers_Results{s.List.Struct(i)}
+}
+func (s Stream_setLayers_Results_List) Set(i int, v Stream_setLayers_Results) error {
+	return s.List.SetStruct(i, v.Struct)
+}
+
+// Stream_setLayers_Results_Promise is a wrapper for a Stream_setLayers_Results promised by a client call.
+type Stream_setLayers_Results_Promise struct{ *capnp.Pipeline }
+
+func (p Stream_setLayers_Results_Promise) Struct() (Stream_setLayers_Results, error) {
+	s, err := p.Pipeline.Struct()
+	return Stream_setLayers_Results{s}, err
 }
 
 type Field struct{ capnp.Struct }
