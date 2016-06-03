@@ -1,0 +1,203 @@
+package fields
+
+import (
+	schemas "github.com/little-dude/tgen/capnp"
+	"math/rand"
+	"zombiezen.com/go/capnproto2"
+)
+
+type LongField struct {
+	FirstValue []byte
+	FullMask   []byte
+	Value      []byte
+	Step       []byte
+	Count      uint64 // does not really make sense to generate more than 2^64 different packets
+	Mode       uint8
+	Mask       []byte
+}
+
+func (field *LongField) GetValue() []byte {
+	return field.Value
+}
+
+func (field *LongField) SetValue(value []byte) {
+	value = adjustSliceLength(len(field.FullMask), value)
+	for i := 0; i < len(value); i++ {
+		value[i] = value[i] & field.FullMask[i]
+	}
+	field.Value = value
+}
+
+func (field *LongField) GetMask() []byte {
+	return field.Mask
+}
+
+func (field *LongField) SetMask(mask []byte) {
+	mask = adjustSliceLength(len(field.FullMask), mask)
+	for i := 0; i < len(mask); i++ {
+		mask[i] = mask[i] & field.FullMask[i]
+	}
+	field.Mask = mask
+}
+
+func (field *LongField) GetStep() []byte {
+	return field.Step
+}
+
+func (field *LongField) SetStep(step []byte) {
+	step = adjustSliceLength(len(field.FullMask), step)
+	for i := 0; i < len(step); i++ {
+		step[i] = step[i] & field.FullMask[i]
+	}
+	field.Step = step
+}
+
+func (field *LongField) GetCount() uint64 {
+	return uint64(field.Count)
+}
+
+func (field *LongField) SetCount(count uint64) {
+	if count > 1 {
+		// FIXME
+		// field.Count = uint64(count % uint64(field.FullMask))
+		field.Count = count
+	} else {
+		field.Count = uint64(1)
+	}
+}
+
+func (field *LongField) GetMode() uint8 {
+	return field.Mode
+}
+
+func (field *LongField) SetMode(mode uint8) {
+	switch mode {
+	case AUTO, FIXED, RANDOMIZE, INCREMENT, DECREMENT:
+		field.Mode = mode
+	default:
+		field.Mode = FIXED
+	}
+}
+
+func (field *LongField) FromCapnp(capnpField *schemas.Field) {
+	value, _ := capnpField.Value()
+	field.SetValue(value)
+
+	step, _ := capnpField.Step()
+	field.SetStep(step)
+
+	mask, _ := capnpField.Mask()
+	field.SetMask(mask)
+
+	field.SetMode(capnpField.Mode())
+	field.SetCount(capnpField.Count())
+}
+
+func (field *LongField) ToCapnp(seg *capnp.Segment) (capnpField schemas.Field) {
+	capnpField, _ = schemas.NewField(seg)
+	capnpField.SetValue(field.GetValue())
+	capnpField.SetMode(field.GetMode())
+	capnpField.SetStep(field.GetStep())
+	capnpField.SetMask(field.GetMask())
+	capnpField.SetCount(field.GetCount())
+	return capnpField
+}
+
+func (field *LongField) SetCurrentValue(index uint) {
+	if uint64(index)%field.Count == 0 {
+		field.Value = field.FirstValue
+		return
+	}
+	switch field.Mode {
+	case INCREMENT:
+		field.Increment()
+	case DECREMENT:
+		field.Decrement()
+	case RANDOMIZE:
+		field.Randomize()
+	default:
+		return
+	}
+}
+
+func (field *LongField) Randomize() {
+	for i := len(field.Value) - 1; i >= 0; i-- {
+		field.Value[i] = byte(rand.Intn(256))
+	}
+}
+
+func (field *LongField) Decrement() {
+	overflow := false
+	var newValue byte
+	for i := len(field.Value) - 1; i >= 0; i-- {
+		if field.Mask[i] == 0 {
+			overflow = false
+			continue
+		}
+		if overflow == true {
+			newValue, overflow = sub(field.Value[i], 1)
+		} else {
+			newValue = field.Value[i]
+		}
+		if overflow == true {
+			newValue, _ = sub(newValue, field.Step[i])
+		} else {
+			newValue, overflow = sub(newValue, field.Step[i])
+		}
+		field.Value[i] = newValue & field.Mask[i]
+	}
+}
+
+func (field *LongField) Increment() {
+	overflow := byte(0)
+	var newValue, tmpOverflow byte
+	for i := len(field.Value) - 1; i >= 0; i-- {
+		if field.Mask[i] == 0 {
+			overflow = 0
+			continue
+		}
+		if overflow > 0 {
+			newValue, tmpOverflow = add(field.Value[i], overflow)
+		} else {
+			newValue = field.Value[i]
+			tmpOverflow = 0
+		}
+		newValue, overflow = add(newValue, field.Step[i])
+		field.Value[i] = newValue & field.Mask[i]
+		overflow += tmpOverflow
+	}
+}
+
+// Modulo:
+// a = q*b + r (where r=a%b)  => a%b = a - q*b
+// in practice a/b = q
+// so a%b = a - (a/b)*b
+//
+// now how to perform division on []byte?
+//
+// 	9876 | 5
+// 	----------
+//  9	 |
+// -5 	 | 1
+// =4	 |
+//  48	 |
+// -45 	 |  9
+// = 3	 |
+//   37  |
+//  -35	 |   7
+//  = 2	 |
+//    26 |
+//   -25 |    5
+//   = 1
+//
+// ===> 9876 = 1975*5 + 1
+//
+// This shows how to perform division on an array:
+// [9, 8, 7, 6] / [5] = [9/5, (8+9%5)/5, (7+(8+9%5)%5)/5, (6+(7+(8+9%5)%5)%5)/5] + 9876 % 5
+//
+// this is easy to implement but it does not work for divisors with more than
+// one digit, and I could not figure out how to generalize
+//
+// https://en.wikipedia.org/wiki/Long_division
+// http://courses.cs.vt.edu/~cs1104/BuildingBlocks/divide.030.html
+// http://stackoverflow.com/questions/3199727/how-to-implement-long-division-for-enormous-numbers-bignums

@@ -2,6 +2,7 @@ package server
 
 import (
 	schema "github.com/little-dude/tgen/capnp"
+	"github.com/little-dude/tgen/server/log"
 	"net"
 	"zombiezen.com/go/capnproto2"
 )
@@ -13,14 +14,14 @@ type Controller struct {
 
 // GetPorts is a capability returning the list of the host ports
 func (controller *Controller) GetPorts(call schema.Controller_getPorts) error {
-	Trace.Println("GetPorts called on ", controller)
+	log.Trace.Println("GetPorts called on ", controller)
 	itfs, e := net.Interfaces()
 	if e != nil {
 		return e
 	}
 	controller.updatePorts(itfs)
 	capnpPorts, e := call.Results.NewPorts(int32(len(controller.ports)))
-	Trace.Println(controller.ports)
+	log.Trace.Println(controller.ports)
 	if e != nil {
 		return e
 	}
@@ -39,13 +40,13 @@ func (controller *Controller) updatePorts(interfaces []net.Interface) {
 		portFound = false
 		for _, p := range controller.ports {
 			if p.name == itf.Name {
-				Info.Println("Found existing port ", p.name)
+				log.Info.Println("Found existing port ", p.name)
 				portFound = true
 				break
 			}
 		}
 		if portFound == false {
-			Info.Println("Found new port ", itf.Name)
+			log.Info.Println("Found new port ", itf.Name)
 			controller.ports = append(controller.ports, Port{name: itf.Name})
 		}
 	}
