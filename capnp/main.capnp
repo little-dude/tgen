@@ -41,7 +41,7 @@ interface Stream {
 
 struct Field {
     value     @0 :Data;
-    mode      @1 :Text;
+    mode      @1 :UInt8;
     step      @2 :Data;
     mask      @3 :Data;
     count     @4 :UInt64;
@@ -50,25 +50,25 @@ struct Field {
 struct Protocol {
     union {
         ethernet2 :group {
-            source       @0  :Field = (mode = "fixed", mask = 0x"FF FF FF FF FF FF", value = 0x"00 00 00 00 00 00");
-            destination  @1  :Field = (mode = "fixed", mask = 0x"FF FF FF FF FF FF", value = 0x"FF FF FF FF FF FF");
-            ethernetType @2  :Field = (mode = "fixed", mask = 0x"FF FF",             value = 0x"08 00")            ;
+            source       @0  :Field = (mode = 0, mask = 0x"FF FF FF FF FF FF", value = 0x"00 00 00 00 00 00");
+            destination  @1  :Field = (mode = 0, mask = 0x"FF FF FF FF FF FF", value = 0x"FF FF FF FF FF FF");
+            ethernetType @2  :Field = (mode = 0, mask = 0x"FF FF",             value = 0x"08 00")            ;
         }
         ipv4 :group {
-            version      @3  :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"04")               ;
-            ihl          @4  :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"05")               ;
-            tos          @5  :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"00")               ;
-            length       @6  :Field = (mode = "auto" , mask = 0x"FF",                value = 0x"00")               ;
-            id           @7  :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"00")               ;
-            flags        @8  :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"00")               ;
-            fragOffset   @9  :Field = (mode = "fixed", mask = 0x"FF FF",             value = 0x"00 00")            ;
-            ttl          @10 :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"FF")               ;
-            protocol     @11 :Field = (mode = "auto" , mask = 0x"FF",                value = 0x"00")               ;
-            checksum     @12 :Field = (mode = "auto" , mask = 0x"FF",                value = 0x"00")               ;
-            srcip        @13 :Field = (mode = "fixed", mask = 0x"FF FF FF FF",       value = 0x"00 00 00 00")      ;
-            dstip        @14 :Field = (mode = "fixed", mask = 0x"FF FF FF FF",       value = 0x"FF FF FF FF")      ;
-            options      @15 :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"00")               ;
-            padding      @16 :Field = (mode = "fixed", mask = 0x"FF",                value = 0x"00")               ;
+            version      @3  :Field = (mode = 0, mask = 0x"FF",                value = 0x"04")               ;
+            ihl          @4  :Field = (mode = 0, mask = 0x"FF",                value = 0x"05")               ;
+            tos          @5  :Field = (mode = 0, mask = 0x"FF",                value = 0x"00")               ;
+            length       @6  :Field = (mode = 4 , mask = 0x"FF FF",             value = 0x"00 00")            ;
+            id           @7  :Field = (mode = 0, mask = 0x"FF FF",             value = 0x"00 00")            ;
+            flags        @8  :Field = (mode = 0, mask = 0x"FF",                value = 0x"00")               ;
+            fragOffset   @9  :Field = (mode = 0, mask = 0x"FF FF",             value = 0x"00 00")            ;
+            ttl          @10 :Field = (mode = 0, mask = 0x"FF",                value = 0x"FF")               ;
+            protocol     @11 :Field = (mode = 4 , mask = 0x"FF",                value = 0x"00")               ;
+            checksum     @12 :Field = (mode = 4 , mask = 0x"FF FF",             value = 0x"00 00")            ;
+            source       @13 :Field = (mode = 0, mask = 0x"FF FF FF FF",       value = 0x"00 00 00 00")      ;
+            destination  @14 :Field = (mode = 0, mask = 0x"FF FF FF FF",       value = 0x"FF FF FF FF")      ;
+            options      @15 :Field = (mode = 4,  mask = 0x"00",                value = 0x"00")               ;
+            padding      @16 :Field = (mode = 4,  mask = 0x"00",                value = 0x"00")               ;
         }
     }
 }
