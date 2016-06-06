@@ -11,7 +11,7 @@ type Field64 struct {
 	FullMask   uint64
 	Value      uint64
 	Step       uint64
-	Count      uint64
+	Count      uint16
 	Mode       uint8
 	Mask       uint64
 }
@@ -55,15 +55,15 @@ func (field *Field64) SetStep(step []byte) {
 	field.Step = res & field.FullMask
 }
 
-func (field *Field64) GetCount() uint64 {
-	return uint64(field.Count)
+func (field *Field64) GetCount() uint16 {
+	return field.Count
 }
 
-func (field *Field64) SetCount(count uint64) {
+func (field *Field64) SetCount(count uint16) {
 	if count > 1 {
-		field.Count = uint64(count % uint64(field.FullMask))
+		field.Count = count
 	} else {
-		field.Count = uint64(1)
+		field.Count = 1
 	}
 }
 
@@ -104,7 +104,7 @@ func (field *Field64) ToCapnp(seg *capnp.Segment) (capnpField schemas.Field) {
 	return capnpField
 }
 func (field Field64) SetCurrentValue(index uint) {
-	if uint64(index)%field.Count == 0 {
+	if index%uint(field.Count) == 0 {
 		field.Value = field.FirstValue
 		return
 	}

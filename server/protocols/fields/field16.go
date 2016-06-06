@@ -55,15 +55,15 @@ func (field *Field16) SetStep(step []byte) {
 	field.Step = res & field.FullMask
 }
 
-func (field *Field16) GetCount() uint64 {
-	return uint64(field.Count)
+func (field *Field16) GetCount() uint16 {
+	return field.Count
 }
 
-func (field *Field16) SetCount(count uint64) {
+func (field *Field16) SetCount(count uint16) {
 	if count > 1 {
-		field.Count = uint16(count % uint64(field.FullMask))
+		field.Count = count % field.FullMask
 	} else {
-		field.Count = uint16(1)
+		field.Count = 1
 	}
 }
 

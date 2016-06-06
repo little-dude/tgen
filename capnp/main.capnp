@@ -14,8 +14,8 @@ interface Port {
     getStreams @2 ()               -> (streams :List(Stream));
     newStream  @3 ()               -> (stream :Stream);
     delStream  @4 (name :Text)     -> ();
-    # startSend    @1  () -> ();
-    # stopSend     @2  () -> ();
+    startSend  @5  () -> ();
+    stopSend   @6  () -> ();
     # startCapture @3  () -> ();
     # stopCapture  @4  () -> ();
     # getStats     @5  () -> ();
@@ -33,9 +33,8 @@ interface Stream {
     setLayers @3 (layers :List(Protocol)) -> ();
     struct Config {
         name            @0 :Text;
-        loop            @1 :Bool;
-        repeat          @2 :UInt32;
-        packetsPerSec   @3 :UInt32;
+        count           @1 :Bool;
+        packetsPerSec   @2 :UInt32;
     }
 }
 
@@ -44,7 +43,11 @@ struct Field {
     mode      @1 :UInt8;
     step      @2 :Data;
     mask      @3 :Data;
-    count     @4 :UInt64;
+    # it's currently not realistic to have a field that varies over more than
+    # 2**16 values. Since the number of packets to generate is equal to the
+    # Least Common Multiple of all the fields of a layer, we can already reach
+    # huge values with a uint16 integer.
+    count     @4 :UInt16;
 }
 
 struct Protocol {

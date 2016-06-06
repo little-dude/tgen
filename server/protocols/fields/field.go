@@ -19,14 +19,14 @@ type Field interface {
 	SetValue([]byte)
 	SetStep([]byte)
 	SetMask([]byte)
-	SetCount(uint64)
+	SetCount(uint16)
 	SetMode(uint8)
 	// SetFullMask([]byte)
 
 	GetValue() []byte
 	GetStep() []byte
 	GetMask() []byte
-	GetCount() uint64
+	GetCount() uint16
 	GetMode() uint8
 	// GetFullMask() []byte
 

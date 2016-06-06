@@ -11,7 +11,7 @@ type LongField struct {
 	FullMask   []byte
 	Value      []byte
 	Step       []byte
-	Count      uint64 // does not really make sense to generate more than 2^64 different packets
+	Count      uint16
 	Mode       uint8
 	Mask       []byte
 }
@@ -52,17 +52,15 @@ func (field *LongField) SetStep(step []byte) {
 	field.Step = step
 }
 
-func (field *LongField) GetCount() uint64 {
-	return uint64(field.Count)
+func (field *LongField) GetCount() uint16 {
+	return field.Count
 }
 
-func (field *LongField) SetCount(count uint64) {
+func (field *LongField) SetCount(count uint16) {
 	if count > 1 {
-		// FIXME
-		// field.Count = uint64(count % uint64(field.FullMask))
 		field.Count = count
 	} else {
-		field.Count = uint64(1)
+		field.Count = 1
 	}
 }
 
@@ -104,7 +102,7 @@ func (field *LongField) ToCapnp(seg *capnp.Segment) (capnpField schemas.Field) {
 }
 
 func (field *LongField) SetCurrentValue(index uint) {
-	if uint64(index)%field.Count == 0 {
+	if index%uint(field.Count) == 0 {
 		field.Value = field.FirstValue
 		return
 	}

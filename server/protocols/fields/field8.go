@@ -11,7 +11,7 @@ type Field8 struct {
 	FullMask   uint8
 	Value      uint8
 	Step       uint8
-	Count      uint8
+	Count      uint16
 	Mode       uint8
 	Mask       uint8
 }
@@ -40,15 +40,15 @@ func (field *Field8) SetStep(step []byte) {
 	field.Step = adjustSliceLength(1, step)[0] & field.FullMask
 }
 
-func (field *Field8) GetCount() uint64 {
-	return uint64(field.Count)
+func (field *Field8) GetCount() uint16 {
+	return field.Count
 }
 
-func (field *Field8) SetCount(count uint64) {
+func (field *Field8) SetCount(count uint16) {
 	if count > 1 {
-		field.Count = uint8(count % uint64(field.FullMask))
+		field.Count = count % uint16(field.FullMask)
 	} else {
-		field.Count = uint8(1)
+		field.Count = 1
 	}
 }
 

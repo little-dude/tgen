@@ -11,7 +11,7 @@ type Field32 struct {
 	FullMask   uint32
 	Value      uint32
 	Step       uint32
-	Count      uint32
+	Count      uint16
 	Mode       uint8
 	Mask       uint32
 }
@@ -67,15 +67,15 @@ func (field *Field32) SetStep(step []byte) {
 	field.Step = res & field.FullMask
 }
 
-func (field *Field32) GetCount() uint64 {
-	return uint64(field.Count)
+func (field *Field32) GetCount() uint16 {
+	return field.Count
 }
 
-func (field *Field32) SetCount(count uint64) {
+func (field *Field32) SetCount(count uint16) {
 	if count > 1 {
-		field.Count = uint32(count % uint64(field.FullMask))
+		field.Count = count
 	} else {
-		field.Count = uint32(1)
+		field.Count = 1
 	}
 }
 
@@ -117,7 +117,7 @@ func (field *Field32) ToCapnp(seg *capnp.Segment) (capnpField schemas.Field) {
 }
 
 func (field Field32) SetCurrentValue(index uint) {
-	if uint32(index)%field.Count == 0 {
+	if index%uint(field.Count) == 0 {
 		field.Value = field.FirstValue
 		return
 	}
