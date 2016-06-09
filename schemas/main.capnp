@@ -7,12 +7,10 @@ $Go.import("github.com/little-dude/tgen/capnp");
 interface Controller {
     getPorts      @0 ()               -> (ports :List(Port));
     listStreams   @1 ()               -> (ids :List(UInt16));
-    createStream  @2 (stream :Stream) -> (id :UInt16);
-    fetchStream   @3 (id :UInt16)     -> (stream :Stream);
-    updateStream  @4 (stream :Stream) -> ();
+    fetchStream   @2 (id :UInt16)     -> (stream :Stream);
+    saveStream    @3 (stream :Stream) -> ();
+    createStream  @4 (stream :Stream) -> (id :UInt16);
     deleteStream  @5 (id :UInt16)     -> ();
-    prepareStream @6 (id :UInt16)     -> ();
-    isStreamReady @7 (id :UInt16)     -> ();
 }
 
 interface Port {

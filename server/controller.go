@@ -47,7 +47,7 @@ func (c *Controller) getHostPorts() error {
 
 	c.ports = make([]Port, len(itfs))
 	for i, itf := range itfs {
-		c.ports[i] = Port{name: itf.Name}
+		c.ports[i] = Port{name: itf.Name, controller: c}
 		Info.Println("Found port:", itf.Name)
 	}
 	return nil
@@ -82,12 +82,15 @@ func (c *Controller) CreateStream(call schemas.Controller_createStream) error {
 	if e != nil {
 		return e
 	}
+
+	saveStream(&stream, &capnpStream)
 	Info.Println("New stream:", &stream)
+
 	call.Results.SetId(stream.ID)
-	e = stream.FromCapnp(&capnpStream)
 	if e != nil {
 		return e
 	}
+
 	c.streams = append(c.streams, stream)
 	return nil
 }
@@ -128,30 +131,6 @@ func (c *Controller) FetchStream(call schemas.Controller_fetchStream) error {
 	return NewError("Stream ID not found: ", strconv.Itoa(int(streamID)))
 }
 
-func (c *Controller) UpdateStream(call schemas.Controller_updateStream) error {
-	if !call.Params.HasStream() {
-		return NewError("Missing stream to update")
-	}
-
-	capnpStream, e := call.Params.Stream()
-	if e != nil {
-		return e
-	}
-
-	streamID := capnpStream.Id()
-	for _, stream := range c.streams {
-		if stream.ID == streamID {
-			e = stream.FromCapnp(&capnpStream)
-			if e != nil {
-				return e
-			}
-			return nil
-		}
-	}
-
-	return NewError("Invalid stream ID", strconv.Itoa(int(streamID)))
-}
-
 func (c *Controller) DeleteStream(call schemas.Controller_deleteStream) error {
 	streamID := call.Params.Id()
 	for i, stream := range c.streams {
@@ -163,11 +142,30 @@ func (c *Controller) DeleteStream(call schemas.Controller_deleteStream) error {
 	return NewError("Cannot delete stream: stream ID", strconv.Itoa(int(streamID)), "not found")
 }
 
-func (c *Controller) PrepareStream(call schemas.Controller_prepareStream) error {
-	// stream.ToBytes()
-	return nil
+func saveStream(stream *Stream, capnpStream *schemas.Stream) error {
+	e := stream.FromCapnp(capnpStream)
+	if e != nil {
+		return e
+	}
+	Info.Println("Preparing stream...", stream)
+	return stream.ToBytes()
 }
 
-func (c *Controller) IsStreamReady(call schemas.Controller_isStreamReady) error {
-	return nil
+func (c *Controller) SaveStream(call schemas.Controller_saveStream) error {
+	if !call.Params.HasStream() {
+		return NewError("Missing stream to save")
+	}
+
+	capnpStream, e := call.Params.Stream()
+	if e != nil {
+		return e
+	}
+
+	streamID := capnpStream.Id()
+	for _, stream := range c.streams {
+		if stream.ID == streamID {
+			return saveStream(&stream, &capnpStream)
+		}
+	}
+	return NewError("No stream found with ID", strconv.Itoa(int(streamID)))
 }
