@@ -1,61 +1,51 @@
 package server
 
 import (
-	schemas "github.com/little-dude/tgen/capnp"
-	"github.com/little-dude/tgen/server/log"
-	"zombiezen.com/go/capnproto2"
+	// "github.com/google/gopacket/pfring" FIXME: pf_ring does seem to work :(
+	"github.com/google/gopacket/pcap"
+	"github.com/little-dude/tgen/schemas"
+	// "zombiezen.com/go/capnproto2"
 )
 
 type Port struct {
-	name    string
-	streams []Stream
+	name string
 }
 
-func (port *Port) GetConfig(call schemas.Port_getConfig) error {
-	log.Trace.Println("GetConfig called on ", port)
-	seg := call.Results.Segment()
-	capnpPort, _ := schemas.NewPort_Config(seg)
-	capnpPort.SetName(port.name)
-	return call.Results.SetConfig(capnpPort)
-}
-
-func (port *Port) SetConfig(call schemas.Port_setConfig) error {
-	log.Trace.Println("SetConfig called on ", port)
-	// capnpPort, _ := call.Params.Config()
+func (p *Port) GetConfig(call schemas.Port_getConfig) error {
+	capnpConfig, e := call.Results.NewConfig()
+	if e != nil {
+		return e
+	}
+	capnpConfig.SetName(p.name)
 	return nil
 }
 
-func (port *Port) GetStreams(call schemas.Port_getStreams) error {
-	log.Trace.Println("GetStreams called on ", port)
-	seg := call.Results.Segment()
-	capnpStreams, _ := call.Results.NewStreams(int32(len(port.streams)))
-	for i, _ := range port.streams {
-		capnpStream := schemas.Stream_ServerToClient(&port.streams[i])
-		ptr := capnp.NewInterface(seg, seg.Message().AddCap(capnpStream.Client)).ToPtr()
-		capnpStreams.SetPtr(i, ptr)
-	}
+func (p *Port) SetConfig(call schemas.Port_setConfig) error {
 	return nil
 }
 
-func (port *Port) NewStream(call schemas.Port_newStream) error {
-	log.Trace.Println("NewStream called on ", port)
-	stream := Stream{name: "new_stream"}
-	port.streams = append(port.streams, stream)
-	// Create a new locally implemented Stream capability.
-	capnpStream := schemas.Stream_ServerToClient(&stream)
-	// Notice that methods can return other interfaces.
-	log.Trace.Println(port.streams)
-	return call.Results.SetStream(capnpStream)
+func createPcapHandle(portName string) (*pcap.Handle, error) {
+	inactiveHandle, err := pcap.NewInactiveHandle(portName)
+	defer inactiveHandle.CleanUp()
+	if err != nil {
+		return nil, err
+	}
+	inactiveHandle.SetPromisc(false)
+	return inactiveHandle.Activate()
 }
 
-func (port *Port) DelStream(call schemas.Port_delStream) error {
-	log.Trace.Println("DelStream called on ", port)
-	name, _ := call.Params.Name()
-	for i, stream := range port.streams {
-		if stream.name == name {
-			port.streams = append(port.streams[:i], port.streams[i+1:]...)
-			break
-		}
-	}
+func (p *Port) StartSend(call schemas.Port_startSend) error {
+	// handle, e := createPcapHandle(p.name)
+	// if e != nil {
+	// 	return NewError(INTERNAL_ERROR, "Failed to create the pcap handle: ", e.Error()))
+	// }
+	// for _, stream := range port.streams {
+	// 	for _, pkt := range stream.Packets {
+	// 		e = handle.WritePacketData(pkt)
+	// 		if e != nil {
+	// 			return NewError(INTERNAL_ERROR, "Failed to write packet: ", e.Error()))
+	// 		}
+	// 	}
+	// }
 	return nil
 }

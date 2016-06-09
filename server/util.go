@@ -1,4 +1,4 @@
-package fields
+package server
 
 func adjustSliceLength(length int, slice []byte) []byte {
 	l := len(slice)

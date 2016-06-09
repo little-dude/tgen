@@ -1,9 +1,7 @@
-package fields
+package server
 
 import (
-	schemas "github.com/little-dude/tgen/capnp"
 	"math/rand"
-	"zombiezen.com/go/capnproto2"
 )
 
 type Field64 struct {
@@ -80,29 +78,6 @@ func (field *Field64) SetMode(mode uint8) {
 	}
 }
 
-func (field *Field64) FromCapnp(capnpField *schemas.Field) {
-	value, _ := capnpField.Value()
-	field.SetValue(value)
-
-	step, _ := capnpField.Step()
-	field.SetStep(step)
-
-	mask, _ := capnpField.Mask()
-	field.SetMask(mask)
-
-	field.SetMode(capnpField.Mode())
-	field.SetCount(capnpField.Count())
-}
-
-func (field *Field64) ToCapnp(seg *capnp.Segment) (capnpField schemas.Field) {
-	capnpField, _ = schemas.NewField(seg)
-	capnpField.SetValue(field.GetValue())
-	capnpField.SetMode(field.GetMode())
-	capnpField.SetStep(field.GetStep())
-	capnpField.SetMask(field.GetMask())
-	capnpField.SetCount(field.GetCount())
-	return capnpField
-}
 func (field Field64) SetCurrentValue(index uint) {
 	if index%uint(field.Count) == 0 {
 		field.Value = field.FirstValue

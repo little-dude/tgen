@@ -1,8 +1,7 @@
 package server
 
 import (
-	schema "github.com/little-dude/tgen/capnp"
-	"github.com/little-dude/tgen/server/log"
+	"github.com/little-dude/tgen/schemas"
 	"net"
 	"os"
 	"zombiezen.com/go/capnproto2/rpc"
@@ -10,23 +9,23 @@ import (
 
 // Serve waits for clients and starts a new session for each of them
 func Serve() {
-	log.InitLogging()
+	InitLogging()
 	listener, e := net.Listen("tcp", ":1234") // Listen for incoming connections
 	if e != nil {
-		log.Error.Println("Error listening: ", e.Error())
+		Error.Println(e.Error())
 		os.Exit(1)
 	}
 	defer listener.Close() // Close the listener when the application closes.
-	log.Info.Println("Listening on TCP port 1234")
+	Info.Println("Waiting for connections")
 
-	controller := schema.Controller_ServerToClient(&Controller{})
+	controller := schemas.Controller_ServerToClient(&Controller{})
 	for true {
 		connection, e := listener.Accept()
-		log.Info.Println("New connection")
 		if e != nil {
-			log.Error.Println("Error accepting connection: ", e.Error())
+			Error.Println(e.Error())
 			os.Exit(1)
 		}
+		Trace.Println("New connection")
 		defer connection.Close()
 		go rpc.NewConn(rpc.StreamTransport(connection), rpc.MainInterface(controller.Client)).Wait()
 	}

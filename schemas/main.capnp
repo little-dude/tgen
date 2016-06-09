@@ -1,21 +1,25 @@
 # using Go = import "../../../../zombiezen.com/go/capnproto2/go.capnp";
 using Go = import "go.capnp";
-$Go.package("capnp");
+$Go.package("schemas");
 $Go.import("github.com/little-dude/tgen/capnp");
 @0xef97cf4069588836;
 
 interface Controller {
-    getPorts @0 () -> (ports :List(Port));
+    getPorts      @0 ()               -> (ports :List(Port));
+    listStreams   @1 ()               -> (ids :List(UInt16));
+    createStream  @2 (stream :Stream) -> (id :UInt16);
+    fetchStream   @3 (id :UInt16)     -> (stream :Stream);
+    updateStream  @4 (stream :Stream) -> ();
+    deleteStream  @5 (id :UInt16)     -> ();
+    prepareStream @6 (id :UInt16)     -> ();
+    isStreamReady @7 (id :UInt16)     -> ();
 }
 
 interface Port {
-    getConfig  @0 ()               -> (config :Config);
-    setConfig  @1 (config :Config) -> ();
-    getStreams @2 ()               -> (streams :List(Stream));
-    newStream  @3 ()               -> (stream :Stream);
-    delStream  @4 (name :Text)     -> ();
-    startSend  @5  () -> ();
-    stopSend   @6  () -> ();
+    getConfig    @0 ()                  -> (config :Config);
+    setConfig    @1 (config :Config)    -> ();
+    startSend    @2 (ids :List(UInt16)) -> ();
+    # stopSend     @6  () -> ();
     # startCapture @3  () -> ();
     # stopCapture  @4  () -> ();
     # getStats     @5  () -> ();
@@ -26,16 +30,11 @@ interface Port {
     }
 }
 
-interface Stream {
-    getConfig @0 ()                       -> (config :Config);
-    setConfig @1 (config :Config)         -> ();
-    getLayers @2 ()                       -> (layers :List(Protocol));
-    setLayers @3 (layers :List(Protocol)) -> ();
-    struct Config {
-        name            @0 :Text;
-        count           @1 :Bool;
-        packetsPerSec   @2 :UInt32;
-    }
+struct Stream {
+    id              @0 :UInt16 = 0;
+    count           @1 :UInt32 = 1;
+    packetsPerSec   @2 :UInt32 = 1;
+    layers          @3 :List(Protocol);
 }
 
 struct Field {
