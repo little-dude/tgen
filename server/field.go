@@ -89,43 +89,43 @@ func DecerealizeField(f _Field, capnpField *schemas.Field) error {
 }
 
 func (field *Field8) FromCapnp(capnpField *schemas.Field) error {
-	return CerealizeField(field, capnpField)
+	return DecerealizeField(field, capnpField)
 }
 
 func (field *Field8) ToCapnp(capnpField *schemas.Field) error {
-	return DecerealizeField(field, capnpField)
+	return CerealizeField(field, capnpField)
 }
 
 func (field *Field16) FromCapnp(capnpField *schemas.Field) error {
-	return CerealizeField(field, capnpField)
+	return DecerealizeField(field, capnpField)
 }
 
 func (field *Field16) ToCapnp(capnpField *schemas.Field) error {
-	return DecerealizeField(field, capnpField)
+	return CerealizeField(field, capnpField)
 }
 
 func (field *Field32) FromCapnp(capnpField *schemas.Field) error {
-	return CerealizeField(field, capnpField)
+	return DecerealizeField(field, capnpField)
 }
 
 func (field *Field32) ToCapnp(capnpField *schemas.Field) error {
-	return DecerealizeField(field, capnpField)
+	return CerealizeField(field, capnpField)
 }
 
 func (field *Field64) FromCapnp(capnpField *schemas.Field) error {
-	return CerealizeField(field, capnpField)
+	return DecerealizeField(field, capnpField)
 }
 
 func (field *Field64) ToCapnp(capnpField *schemas.Field) error {
-	return DecerealizeField(field, capnpField)
-}
-
-func (field *LongField) FromCapnp(capnpField *schemas.Field) error {
 	return CerealizeField(field, capnpField)
 }
 
-func (field *LongField) ToCapnp(capnpField *schemas.Field) error {
+func (field *LongField) FromCapnp(capnpField *schemas.Field) error {
 	return DecerealizeField(field, capnpField)
+}
+
+func (field *LongField) ToCapnp(capnpField *schemas.Field) error {
+	return CerealizeField(field, capnpField)
 }
 
 func toString(field Field) string {

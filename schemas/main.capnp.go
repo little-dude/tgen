@@ -91,26 +91,6 @@ func (c Controller) SaveStream(ctx context.Context, params func(Controller_saveS
 	}
 	return Controller_saveStream_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
 }
-func (c Controller) CreateStream(ctx context.Context, params func(Controller_createStream_Params) error, opts ...capnp.CallOption) Controller_createStream_Results_Promise {
-	if c.Client == nil {
-		return Controller_createStream_Results_Promise{Pipeline: capnp.NewPipeline(capnp.ErrorAnswer(capnp.ErrNullClient))}
-	}
-	call := &capnp.Call{
-		Ctx: ctx,
-		Method: capnp.Method{
-			InterfaceID:   0xde386d159ea19675,
-			MethodID:      4,
-			InterfaceName: "main.capnp:Controller",
-			MethodName:    "createStream",
-		},
-		Options: capnp.NewCallOptions(opts),
-	}
-	if params != nil {
-		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 1}
-		call.ParamsFunc = func(s capnp.Struct) error { return params(Controller_createStream_Params{Struct: s}) }
-	}
-	return Controller_createStream_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
-}
 func (c Controller) DeleteStream(ctx context.Context, params func(Controller_deleteStream_Params) error, opts ...capnp.CallOption) Controller_deleteStream_Results_Promise {
 	if c.Client == nil {
 		return Controller_deleteStream_Results_Promise{Pipeline: capnp.NewPipeline(capnp.ErrorAnswer(capnp.ErrNullClient))}
@@ -119,7 +99,7 @@ func (c Controller) DeleteStream(ctx context.Context, params func(Controller_del
 		Ctx: ctx,
 		Method: capnp.Method{
 			InterfaceID:   0xde386d159ea19675,
-			MethodID:      5,
+			MethodID:      4,
 			InterfaceName: "main.capnp:Controller",
 			MethodName:    "deleteStream",
 		},
@@ -141,8 +121,6 @@ type Controller_Server interface {
 
 	SaveStream(Controller_saveStream) error
 
-	CreateStream(Controller_createStream) error
-
 	DeleteStream(Controller_deleteStream) error
 }
 
@@ -153,7 +131,7 @@ func Controller_ServerToClient(s Controller_Server) Controller {
 
 func Controller_Methods(methods []server.Method, s Controller_Server) []server.Method {
 	if cap(methods) == 0 {
-		methods = make([]server.Method, 0, 6)
+		methods = make([]server.Method, 0, 5)
 	}
 
 	methods = append(methods, server.Method{
@@ -209,27 +187,13 @@ func Controller_Methods(methods []server.Method, s Controller_Server) []server.M
 			call := Controller_saveStream{c, opts, Controller_saveStream_Params{Struct: p}, Controller_saveStream_Results{Struct: r}}
 			return s.SaveStream(call)
 		},
-		ResultsSize: capnp.ObjectSize{DataSize: 0, PointerCount: 0},
-	})
-
-	methods = append(methods, server.Method{
-		Method: capnp.Method{
-			InterfaceID:   0xde386d159ea19675,
-			MethodID:      4,
-			InterfaceName: "main.capnp:Controller",
-			MethodName:    "createStream",
-		},
-		Impl: func(c context.Context, opts capnp.CallOptions, p, r capnp.Struct) error {
-			call := Controller_createStream{c, opts, Controller_createStream_Params{Struct: p}, Controller_createStream_Results{Struct: r}}
-			return s.CreateStream(call)
-		},
 		ResultsSize: capnp.ObjectSize{DataSize: 8, PointerCount: 0},
 	})
 
 	methods = append(methods, server.Method{
 		Method: capnp.Method{
 			InterfaceID:   0xde386d159ea19675,
-			MethodID:      5,
+			MethodID:      4,
 			InterfaceName: "main.capnp:Controller",
 			MethodName:    "deleteStream",
 		},
@@ -273,14 +237,6 @@ type Controller_saveStream struct {
 	Options capnp.CallOptions
 	Params  Controller_saveStream_Params
 	Results Controller_saveStream_Results
-}
-
-// Controller_createStream holds the arguments for a server call to Controller.createStream.
-type Controller_createStream struct {
-	Ctx     context.Context
-	Options capnp.CallOptions
-	Params  Controller_createStream_Params
-	Results Controller_createStream_Results
 }
 
 // Controller_deleteStream holds the arguments for a server call to Controller.deleteStream.
@@ -788,7 +744,7 @@ func (p Controller_saveStream_Params_Promise) Stream() Stream_Promise {
 type Controller_saveStream_Results struct{ capnp.Struct }
 
 func NewController_saveStream_Results(s *capnp.Segment) (Controller_saveStream_Results, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
 	if err != nil {
 		return Controller_saveStream_Results{}, err
 	}
@@ -796,7 +752,7 @@ func NewController_saveStream_Results(s *capnp.Segment) (Controller_saveStream_R
 }
 
 func NewRootController_saveStream_Results(s *capnp.Segment) (Controller_saveStream_Results, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
 	if err != nil {
 		return Controller_saveStream_Results{}, err
 	}
@@ -810,13 +766,20 @@ func ReadRootController_saveStream_Results(msg *capnp.Message) (Controller_saveS
 	}
 	return Controller_saveStream_Results{root.Struct()}, nil
 }
+func (s Controller_saveStream_Results) Id() uint16 {
+	return s.Struct.Uint16(0)
+}
+
+func (s Controller_saveStream_Results) SetId(v uint16) {
+	s.Struct.SetUint16(0, v)
+}
 
 // Controller_saveStream_Results_List is a list of Controller_saveStream_Results.
 type Controller_saveStream_Results_List struct{ capnp.List }
 
 // NewController_saveStream_Results creates a new list of Controller_saveStream_Results.
 func NewController_saveStream_Results_List(s *capnp.Segment, sz int32) (Controller_saveStream_Results_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0}, sz)
 	if err != nil {
 		return Controller_saveStream_Results_List{}, err
 	}
@@ -836,150 +799,6 @@ type Controller_saveStream_Results_Promise struct{ *capnp.Pipeline }
 func (p Controller_saveStream_Results_Promise) Struct() (Controller_saveStream_Results, error) {
 	s, err := p.Pipeline.Struct()
 	return Controller_saveStream_Results{s}, err
-}
-
-type Controller_createStream_Params struct{ capnp.Struct }
-
-func NewController_createStream_Params(s *capnp.Segment) (Controller_createStream_Params, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	if err != nil {
-		return Controller_createStream_Params{}, err
-	}
-	return Controller_createStream_Params{st}, nil
-}
-
-func NewRootController_createStream_Params(s *capnp.Segment) (Controller_createStream_Params, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	if err != nil {
-		return Controller_createStream_Params{}, err
-	}
-	return Controller_createStream_Params{st}, nil
-}
-
-func ReadRootController_createStream_Params(msg *capnp.Message) (Controller_createStream_Params, error) {
-	root, err := msg.RootPtr()
-	if err != nil {
-		return Controller_createStream_Params{}, err
-	}
-	return Controller_createStream_Params{root.Struct()}, nil
-}
-func (s Controller_createStream_Params) Stream() (Stream, error) {
-	p, err := s.Struct.Ptr(0)
-	if err != nil {
-		return Stream{}, err
-	}
-	return Stream{Struct: p.Struct()}, nil
-}
-
-func (s Controller_createStream_Params) HasStream() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s Controller_createStream_Params) SetStream(v Stream) error {
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewStream sets the stream field to a newly
-// allocated Stream struct, preferring placement in s's segment.
-func (s Controller_createStream_Params) NewStream() (Stream, error) {
-	ss, err := NewStream(s.Struct.Segment())
-	if err != nil {
-		return Stream{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-// Controller_createStream_Params_List is a list of Controller_createStream_Params.
-type Controller_createStream_Params_List struct{ capnp.List }
-
-// NewController_createStream_Params creates a new list of Controller_createStream_Params.
-func NewController_createStream_Params_List(s *capnp.Segment, sz int32) (Controller_createStream_Params_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
-	if err != nil {
-		return Controller_createStream_Params_List{}, err
-	}
-	return Controller_createStream_Params_List{l}, nil
-}
-
-func (s Controller_createStream_Params_List) At(i int) Controller_createStream_Params {
-	return Controller_createStream_Params{s.List.Struct(i)}
-}
-func (s Controller_createStream_Params_List) Set(i int, v Controller_createStream_Params) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-// Controller_createStream_Params_Promise is a wrapper for a Controller_createStream_Params promised by a client call.
-type Controller_createStream_Params_Promise struct{ *capnp.Pipeline }
-
-func (p Controller_createStream_Params_Promise) Struct() (Controller_createStream_Params, error) {
-	s, err := p.Pipeline.Struct()
-	return Controller_createStream_Params{s}, err
-}
-
-func (p Controller_createStream_Params_Promise) Stream() Stream_Promise {
-	return Stream_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-type Controller_createStream_Results struct{ capnp.Struct }
-
-func NewController_createStream_Results(s *capnp.Segment) (Controller_createStream_Results, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
-	if err != nil {
-		return Controller_createStream_Results{}, err
-	}
-	return Controller_createStream_Results{st}, nil
-}
-
-func NewRootController_createStream_Results(s *capnp.Segment) (Controller_createStream_Results, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0})
-	if err != nil {
-		return Controller_createStream_Results{}, err
-	}
-	return Controller_createStream_Results{st}, nil
-}
-
-func ReadRootController_createStream_Results(msg *capnp.Message) (Controller_createStream_Results, error) {
-	root, err := msg.RootPtr()
-	if err != nil {
-		return Controller_createStream_Results{}, err
-	}
-	return Controller_createStream_Results{root.Struct()}, nil
-}
-func (s Controller_createStream_Results) Id() uint16 {
-	return s.Struct.Uint16(0)
-}
-
-func (s Controller_createStream_Results) SetId(v uint16) {
-	s.Struct.SetUint16(0, v)
-}
-
-// Controller_createStream_Results_List is a list of Controller_createStream_Results.
-type Controller_createStream_Results_List struct{ capnp.List }
-
-// NewController_createStream_Results creates a new list of Controller_createStream_Results.
-func NewController_createStream_Results_List(s *capnp.Segment, sz int32) (Controller_createStream_Results_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 0}, sz)
-	if err != nil {
-		return Controller_createStream_Results_List{}, err
-	}
-	return Controller_createStream_Results_List{l}, nil
-}
-
-func (s Controller_createStream_Results_List) At(i int) Controller_createStream_Results {
-	return Controller_createStream_Results{s.List.Struct(i)}
-}
-func (s Controller_createStream_Results_List) Set(i int, v Controller_createStream_Results) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-// Controller_createStream_Results_Promise is a wrapper for a Controller_createStream_Results promised by a client call.
-type Controller_createStream_Results_Promise struct{ *capnp.Pipeline }
-
-func (p Controller_createStream_Results_Promise) Struct() (Controller_createStream_Results, error) {
-	s, err := p.Pipeline.Struct()
-	return Controller_createStream_Results{s}, err
 }
 
 type Controller_deleteStream_Params struct{ capnp.Struct }
@@ -1930,11 +1749,11 @@ func (s Field) SetMask(v []byte) error {
 }
 
 func (s Field) Count() uint16 {
-	return s.Struct.Uint16(2)
+	return s.Struct.Uint16(2) ^ 1
 }
 
 func (s Field) SetCount(v uint16) {
-	s.Struct.SetUint16(2, v)
+	s.Struct.SetUint16(2, v^1)
 }
 
 // Field_List is a list of Field.

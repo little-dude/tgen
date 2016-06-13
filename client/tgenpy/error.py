@@ -1,0 +1,2 @@
+class TgenError(Exception):
+    pass

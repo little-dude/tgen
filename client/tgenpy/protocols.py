@@ -1,117 +1,5 @@
-import os
-import binascii
 import schemas
-import sys
-import capnp
-
-capnp.remove_import_hook()
-sys.modules['schemas'] = capnp.load(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), 'schemas.capnp'))
-
-
-class Controller():
-
-    def __init__(self, hostname, port):
-        address = '{}:{}'.format(hostname, port)
-        client = capnp.TwoPartyClient(address)
-        self._controller = client.bootstrap().cast_as(schemas.Controller)
-        self.ports = []
-        self.streams = []
-
-    def fetch_ports(self):
-        res = self._controller.getPorts().wait()
-        self.ports = []
-        for port in res.ports:
-            self.ports.append(Port(port))
-
-    def fetch_streams(self):
-        res = self._controller.listStreams().wait()
-        self.streams = []
-        for stream_id in res.ids:
-            self.streams.append(self.fetch_stream(stream_id))
-
-    def fetch_stream(self, stream_id):
-        res = self._controller.fetchStream(stream_id).wait()
-        return Stream(capnp_stream=res.stream)
-
-    def create_stream(self, stream):
-        capnp_stream = schemas.Stream.new_message()
-        stream.to_capnp(capnp_stream)
-        stream.id = self._controller.createStream(capnp_stream).wait().id
-        self.streams.append(stream)
-        return stream
-
-    def delete_stream(self, stream_id):
-        for idx, stream in enumerate(self.streams):
-            if stream.id == stream_id:
-                self.streams.pop(idx)
-                self._controller.deleteStream(stream_id).wait()
-
-
-class TgenError(Exception):
-    pass
-
-
-class Port():
-
-    def __init__(self, capnp_port):
-        self._capnp_port = capnp_port
-        self.streams = []
-
-    def get_config(self):
-        res = self._capnp_port.getConfig().wait()
-        self.name = res.config.name
-
-
-class Stream(object):
-
-    def __init__(self, capnp_stream=None):
-        if capnp_stream is not None:
-            self.from_capnp(capnp_stream)
-        else:
-            self.count = 1
-            self.packets_per_sec = 1
-            self.layers = []
-
-    def from_capnp(self, capnp_stream):
-        self._capnp_stream = capnp_stream
-        self.count = capnp_stream.count
-        self.packets_per_sec = capnp_stream.packetsPerSec
-        self.id = capnp_stream.id
-        self.layers = []
-        for capnp_layer in capnp_stream.layers:
-            self.layers.append(Layer(capnp_layer=capnp_layer))
-
-    def to_capnp(self, capnp_stream):
-        capnp_stream.count = self.count
-        capnp_stream.packetsPerSec = self.packets_per_sec
-        layers = capnp_stream.init('layers', len(self.layers))
-        for idx, layer in enumerate(self.layers):
-            layer.to_capnp(layers[idx])
-        # self._capnp_stream.setConfig(cfg).wait()
-
-    # def set_layers(self):
-    #     capnp_layers = []
-    #     for layer in self.layers:
-    #         msg = schemas.Protocol.new_message()
-    #         layer.to_capnp(msg)
-    #         capnp_layers.append(msg)
-    #     self._capnp_stream.setLayers(capnp_layers).wait()
-
-    # def add_layer(self, position, layer):
-    #     self.layers.insert(position, layer)
-    #     self.set_layers()
-
-    # def del_layer(self, layer):
-    #     self.layers.remove(layer)
-    #     self.set_layers()
-
-    # def get_layers(self):
-    #     self.layers = []
-    #     res = self._capnp_stream.getLayers().wait()
-    #     for capnp_layer in res.layers:
-    #         self.layers.append(layer_factory(capnp_layer))
+import binascii
 
 
 class Layer(object):
@@ -143,13 +31,10 @@ class Field(object):
 
     def __init__(self, capnp_field=None):
         if capnp_field is None:
-            self.value = 0
-            self.step = 0
-            self.mask = 0
-            self.count = 0
-            self.mode = 'fixed'
-        else:
-            self.from_capnp(capnp_field)
+            # create a capnp_field, since it has default values that we can use
+            # to initialize the object
+            capnp_field = schemas.Field.new_message()
+        self.from_capnp(capnp_field)
 
     def from_capnp(self, capnp_field):
         self._value = capnp_field.value
@@ -271,7 +156,7 @@ class IPv4(Layer):
     capnp_name = 'ipv4'
 
 
-def layer_factory(capnp_layer):
+def new_layer(capnp_layer):
     which = capnp_layer.which()
     if which == 'ethernet2':
         return Ethernet2(capnp_layer.ethernet2)

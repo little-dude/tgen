@@ -60,12 +60,15 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 		}
 	}
 
+	Trace.Println("Creating pcap handle on", p)
 	handle, e := createPcapHandle(p.name)
 	if e != nil {
+		Error.Println("Failed to create the pcap handle:", e.Error())
 		return NewError("Failed to create the pcap handle: ", e.Error())
 	}
 
 	for _, stream := range streams {
+		Info.Println("Starting to send stream", stream.ID)
 		for _, pkt := range stream.Packets {
 			e = handle.WritePacketData(pkt)
 			if e != nil {
@@ -73,5 +76,6 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 			}
 		}
 	}
+	Info.Println("Done sending on port", p)
 	return nil
 }

@@ -66,37 +66,8 @@ func (c *Controller) ListStreams(call schemas.Controller_listStreams) error {
 	return nil
 }
 
-// CreateStream is the implementation of the capnproto CreateStream method.
-func (c *Controller) CreateStream(call schemas.Controller_createStream) error {
-	if !call.Params.HasStream() {
-		return NewError("No stream provided")
-	}
-
-	capnpStream, e := call.Params.Stream()
-	if e != nil {
-		return e
-	}
-
-	stream := Stream{}
-	stream.ID, e = c.newStreamID()
-	if e != nil {
-		return e
-	}
-
-	saveStream(&stream, &capnpStream)
-	Info.Println("New stream:", &stream)
-
-	call.Results.SetId(stream.ID)
-	if e != nil {
-		return e
-	}
-
-	c.streams = append(c.streams, stream)
-	return nil
-}
-
 func (c *Controller) newStreamID() (uint16, error) {
-	id := uint16(0)
+	id := uint16(1)
 outer:
 	for true {
 		for _, stream := range c.streams {
@@ -112,8 +83,10 @@ outer:
 
 func (c *Controller) FetchStream(call schemas.Controller_fetchStream) error {
 	streamID := call.Params.Id()
+	Info.Println("Fetching stream with ID", strconv.Itoa(int(streamID)))
 	for _, stream := range c.streams {
 		if stream.ID == streamID { // We found the stream we need to return.
+			Info.Println("Stream ID", strconv.Itoa(int(streamID)), "found")
 			// Create a new capnp stream
 			capnpStream, e := call.Results.NewStream()
 			if e != nil {
@@ -151,7 +124,19 @@ func saveStream(stream *Stream, capnpStream *schemas.Stream) error {
 	return stream.ToBytes()
 }
 
+func (c *Controller) getStream(ID uint16) (*Stream, error) {
+	for _, stream := range c.streams {
+		if stream.ID == ID {
+			return &stream, nil
+		}
+	}
+	return nil, NewError("No stream with ID", strconv.Itoa(int(ID)), "found")
+}
+
 func (c *Controller) SaveStream(call schemas.Controller_saveStream) error {
+	if !call.Params.HasStream() {
+		return NewError("No stream provided")
+	}
 	if !call.Params.HasStream() {
 		return NewError("Missing stream to save")
 	}
@@ -162,10 +147,26 @@ func (c *Controller) SaveStream(call schemas.Controller_saveStream) error {
 	}
 
 	streamID := capnpStream.Id()
-	for _, stream := range c.streams {
-		if stream.ID == streamID {
-			return saveStream(&stream, &capnpStream)
+
+	if streamID == 0 {
+		stream := Stream{}
+		streamID, e = c.newStreamID()
+		if e != nil {
+			return e
+		}
+		stream.ID = streamID
+		e = saveStream(&stream, &capnpStream)
+		if e != nil {
+			return e
+		}
+		c.streams = append(c.streams, stream)
+	} else {
+		stream, e := c.getStream(streamID)
+		e = saveStream(stream, &capnpStream)
+		if e != nil {
+			return e
 		}
 	}
-	return NewError("No stream found with ID", strconv.Itoa(int(streamID)))
+	call.Results.SetId(streamID)
+	return nil
 }
