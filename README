@@ -1,0 +1,32 @@
+Quickstart:
+
+Server side:
+
+- Build with `go build`
+- Start the server as root with `./tgen`
+
+Client side:
+
+The python client is not yet a proper python package. Just add the `tgenpy` directory to your `PYTHON_PATH` and run the following script:
+
+```python
+
+import tgenpy
+
+# connect to the server
+controller = tgenpy.Controller('localhost', '1234')
+
+# create a new stream with 1000 ethernet frames:
+stream = tgenpy.Stream()
+ethernet = tgenpy.protocols.Ethernet2())
+stream.layers.append(ethernet)
+stream.count = 1000
+
+# save the stream
+controller.save_stream(stream)
+
+# fetch the ports, find the loopback interface, and send the stream over it:
+for port in controller.fetch_ports():
+    if port.name == 'lo':
+        port.send(stream.id)
+```
