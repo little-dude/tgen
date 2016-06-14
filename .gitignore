@@ -23,5 +23,10 @@ _testmain.go
 *.test
 *.prof
 
-# build files
+# go build files
 tgen
+
+# python
+client/build/
+client/tgenpy.egg-info/
+client/tgenpy/__version__

@@ -1,0 +1,2 @@
+include README requirements.txt
+include tgenpy/schemas.capnp
