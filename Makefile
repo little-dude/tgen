@@ -14,12 +14,12 @@ GODEP=$(GOTEST) -i
 GOFMT=gofmt -w
 
 # Versionning
-BUILD_DATE  := `date +%Y-%m-%d\ %H:%M`
-GIT_BRANCH  := `git rev-parse --abbrev-ref HEAD`
-GIT_TAG     := `git describe --abbrev=0`
-GIT_COMMITS := `git rev-list --count $$(git describe --abbrev=0)..HEAD`
-GIT_HASH    := `git rev-list --abbrev-commit -n 1 HEAD`
-GIT_DIRTY   := `git diff-index --quiet HEAD -- || echo dirty`
+BUILD_DATE  = $(shell date +%Y-%m-%d.%H:%M)
+GIT_BRANCH  = $(shell git rev-parse --abbrev-ref HEAD)
+GIT_TAG     = $(shell git describe --abbrev=0)
+GIT_COMMITS = $(shell git rev-list --count $$(git describe --abbrev=0)..HEAD)
+GIT_HASH    = $(shell git rev-list --abbrev-commit -n 1 HEAD)
+GIT_DIRTY   = $(shell git diff-index --quiet HEAD -- || echo dirty)
 ifeq ($(GIT_DIRTY),dirty)
 BUILD_NUMBER := $(GIT_TAG)+$(GIT_COMMITS).g$(GIT_HASH).dirty
 else
@@ -45,13 +45,5 @@ GO_VERSION_FILE := version.go
 # http://stackoverflow.com/a/25003729/1836144
 go: version_info
 	@echo "building server"
-	@echo "creating $(GO_VERSION_FILE)"
-	@rm -f $(GO_VERSION_FILE)
-	@echo "package main" 					>  $(GO_VERSION_FILE)
-	@echo "const (" 						>> $(GO_VERSION_FILE)
-	@echo "	VERSION = \"$(BUILD_NUMBER)\"" 	>> $(GO_VERSION_FILE)
-	@echo "	BUILD_DATE = \"$(BUILD_DATE)\"" >> $(GO_VERSION_FILE)
-	@echo ")" 								>> $(GO_VERSION_FILE)
-	@echo "compiling..."
-	@go build
+	$(GOBUILD) -ldflags "-X main.version=$(BUILD_NUMBER) -X main.build=$(BUILD_DATE)" -o tgen main.go
 	@echo "done building server"
