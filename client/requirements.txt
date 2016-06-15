@@ -1,2 +1,3 @@
 pycapnp
 six
+future

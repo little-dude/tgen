@@ -1,9 +1,12 @@
+# -*- coding: utf-8
+
 from __future__ import unicode_literals
 from builtins import object
 import capnp
 import schemas
 from .port import Port
 from .stream import Stream
+from . import utils
 
 
 class Controller(object):
@@ -13,18 +16,18 @@ class Controller(object):
 
     def __init__(self, hostname, port):
         address = '{}:{}'.format(hostname, port)
-        client = capnp.TwoPartyClient(address)
+        client = capnp.TwoPartyClient(utils.ensure_native_str(address))
         self._controller = client.bootstrap().cast_as(schemas.Controller)
-        self.ports = []
 
     def fetch_ports(self):
         """
         Return the ports available on the tgen controller
         """
         res = self._controller.getPorts().wait()
-        self.ports = []
+        ports = []
         for port in res.ports:
-            self.ports.append(Port(self._controller, port))
+            ports.append(Port(self._controller, port))
+        return ports
 
     def fetch_streams(self):
         """

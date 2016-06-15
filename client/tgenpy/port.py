@@ -7,6 +7,7 @@ class Port(object):
     def __init__(self, capnp_controller, capnp_port):
         self._controller = capnp_controller
         self._capnp_port = capnp_port
+        self.name = None
 
     def get_config(self):
         res = self._capnp_port.getConfig().wait()

@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 import capnp
+from . import utils
 
 
 def make_schemas_module():
@@ -10,9 +13,9 @@ def make_schemas_module():
     import sys
 
     capnp.remove_import_hook()
-    sys.modules['schemas'] = capnp.load(
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), 'schemas.capnp'))
+    pkg_path = os.path.dirname(os.path.realpath(__file__))
+    schemas_path = os.path.join(pkg_path, 'schemas.capnp')
+    sys.modules['schemas'] = capnp.load(utils.ensure_native_str(schemas_path))
 
 make_schemas_module()
 

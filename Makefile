@@ -5,7 +5,7 @@
 # http://joneisen.me/post/25503842796
 
 
-all: go
+all: go py
 
 BUILD_DATE  = $(shell date +%Y-%m-%d.%H:%M)
 GIT_BRANCH  = $(shell git rev-parse --abbrev-ref HEAD)
