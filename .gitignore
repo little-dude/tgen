@@ -32,3 +32,5 @@ client/build/
 client/tgenpy.egg-info/
 client/tgenpy/__version__
 client/tgenpy/schemas.capnp
+client/env2
+client/env3

@@ -19,7 +19,7 @@ class Stream(object):
         self.id = capnp_stream.id
         self.layers = []
         for capnp_layer in capnp_stream.layers:
-            self.layers.append(protocols.new_layer(capnp_layer))
+            self.layers.append(new_layer(capnp_layer))
 
     def to_capnp(self, capnp_stream):
         capnp_stream.count = self.count
