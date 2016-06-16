@@ -34,8 +34,16 @@ class Controller(object):
         Return the streams configured on the tgen controller
         """
         streams = []
-        ids = self._controller.listStreams().wait().ids
-        for stream_id in ids:
+        # HACK: There seems to be the weirdest bug here.  If fetchStream is
+        # called directly in the loop that iterates over the ids, the ids take
+        # random values. To avoid this we copy all the ids in a separate list
+        # and iterate over this new list.
+        #
+        # TODO: reproduce and raise an issue on github
+        stream_ids = []
+        for stream_id in self._controller.listStreams().wait().ids:
+            stream_ids.append(stream_id)
+        for stream_id in stream_ids:
             res = self._controller.fetchStream(stream_id).wait()
             stream = Stream(capnp_stream=res.stream)
             streams.append(stream)

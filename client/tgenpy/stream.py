@@ -5,13 +5,19 @@ from . import protocols
 
 class Stream(object):
 
-    def __init__(self, capnp_stream=None):
+    def __init__(self, capnp_stream=None, layers=None):
+        if layers is not None and capnp_stream is not None:
+            raise ValueError(
+                'You must pass either `capnp_layer` or `layers` but not both'
+                'arguments`')
         self.count = 1
         self.packets_per_sec = 1
         self.layers = []
         self.id = None
         if capnp_stream:
             self.from_capnp(capnp_stream)
+        if layers:
+            self.layers = layers
 
     def from_capnp(self, capnp_stream):
         self.count = capnp_stream.count

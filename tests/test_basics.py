@@ -2,6 +2,7 @@
 
 import pytest
 import tgenpy
+from tgenpy import protocols
 import logging
 
 # logging.basicConfig(level=logging.INFO)
@@ -51,7 +52,7 @@ def test_single_stream(controller):
     assert stream.count == 1
     assert stream.packets_per_sec == 1
     assert len(stream.layers) == 1
-    assert isinstance(stream.layers[0], tgenpy.protocols.Ethernet2)
+    assert isinstance(stream.layers[0], protocols.Ethernet2)
 
     # update stream
     stream.count = 2
@@ -69,10 +70,30 @@ def test_single_stream(controller):
     assert stream.count == 2
     assert stream.packets_per_sec == 100
     assert len(stream.layers) == 2
-    assert isinstance(stream.layers[0], tgenpy.protocols.Ethernet2)
-    assert isinstance(stream.layers[1], tgenpy.protocols.IPv4)
+    assert isinstance(stream.layers[0], protocols.Ethernet2)
+    assert isinstance(stream.layers[1], protocols.IPv4)
 
     # delete stream
     controller.delete_stream(1)
     streams = controller.fetch_streams()
     assert len(streams) == 0
+
+
+def test_multiple_streams(controller):
+    s1 = tgenpy.Stream(layers=[protocols.Ethernet2()])
+    s2 = tgenpy.Stream(layers=[protocols.Ethernet2(), protocols.IPv4()])
+    controller.save_stream(s1)
+    controller.save_stream(s2)
+    streams = controller.fetch_streams()
+    assert len(streams) == 2
+    if streams[0].id == 1:
+        assert streams[1].id == 2
+    else:
+        assert streams[0].id == 2
+        assert streams[1].id == 1
+
+    for i in range(0, 8):
+        controller.save_stream(tgenpy.Stream(layers=[protocols.Ethernet2()]))
+    ids = controller._controller.listStreams().wait().ids
+    assert 0 not in ids
+    assert len(controller.fetch_streams()) == 10
