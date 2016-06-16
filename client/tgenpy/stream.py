@@ -22,6 +22,8 @@ class Stream(object):
             self.layers.append(new_layer(capnp_layer))
 
     def to_capnp(self, capnp_stream):
+        if self.id is not None:
+            capnp_stream.id = self.id
         capnp_stream.count = self.count
         capnp_stream.packetsPerSec = self.packets_per_sec
         layers = capnp_stream.init('layers', len(self.layers))

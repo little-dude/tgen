@@ -125,9 +125,14 @@ func saveStream(stream *Stream, capnpStream *schemas.Stream) error {
 }
 
 func (c *Controller) getStream(ID uint16) (*Stream, error) {
-	for _, stream := range c.streams {
+	for i := 0; i < len(c.streams); i++ {
+		// not `stream := c.streams[i]` because this creates a copy, and the
+		// pointer we return points to the copy.
+		// for the same reason we cannot use
+		// `for _, stream := range c.streams {}` to iterate over the streams
+		stream := &c.streams[i]
 		if stream.ID == ID {
-			return &stream, nil
+			return stream, nil
 		}
 	}
 	return nil, NewError("No stream with ID", strconv.Itoa(int(ID)), "found")
@@ -149,6 +154,7 @@ func (c *Controller) SaveStream(call schemas.Controller_saveStream) error {
 	streamID := capnpStream.Id()
 
 	if streamID == 0 {
+		Info.Println("Creating a new stream")
 		stream := Stream{}
 		streamID, e = c.newStreamID()
 		if e != nil {
@@ -161,6 +167,7 @@ func (c *Controller) SaveStream(call schemas.Controller_saveStream) error {
 		}
 		c.streams = append(c.streams, stream)
 	} else {
+		Info.Println("Update stream with ID", strconv.Itoa(int(streamID)))
 		stream, e := c.getStream(streamID)
 		e = saveStream(stream, &capnpStream)
 		if e != nil {
