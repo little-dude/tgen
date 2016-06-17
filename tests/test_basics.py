@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
 import pytest
 import tgenpy
 from tgenpy import protocols
@@ -97,3 +98,59 @@ def test_multiple_streams(controller):
     ids = controller._controller.listStreams().wait().ids
     assert 0 not in ids
     assert len(controller.fetch_streams()) == 10
+
+
+def test_long_field(controller):
+
+    def check_defaults(field):
+        assert field.count == 1
+        assert field._count == 1
+
+        assert field.mask == '0xffffffffffff'
+        assert field._mask == b'\xff\xff\xff\xff\xff\xff'
+
+        assert field.value == '0x000000000000'
+        assert field._value == b'\x00\x00\x00\x00\x00\x00'
+
+        assert field.mode == 'fixed'
+        assert field._mode == 0
+
+        assert field.step == '0x00'
+        assert field._step == b''
+
+    def check_new(field):
+        assert field.count == 100
+        assert field._count == 100
+
+        assert field.mask == '0xfedcba987654'
+        assert field._mask == b'\xfe\xdc\xba\x98\x76\x54'
+
+        assert field.value == '0x0123456789ab'
+        assert field._value == b'\x01\x23\x45\x67\x89\xab'
+
+        assert field.step == '0x2a'
+        assert field._step == b'\x2a'
+
+    # create layer and check default values
+    layer = protocols.Ethernet2()
+    check_defaults(layer.source)
+    stream = tgenpy.Stream(layers=[layer])
+
+    # save layer and check default values
+    controller.save_stream(stream)
+    layer = stream.layers[0]
+    check_defaults(layer.source)
+
+    # set custom values and check
+    field = layer.source
+    field.count = 100
+    field.mask = '0xfedcba987654'
+    field.value = '0x0123456789ab'
+    field.mode = 'increment'
+    field.step = 42
+    check_new(field)
+
+    # save layer and check custom values
+    controller.save_stream(stream)
+    layer = stream.layers[0]
+    check_new(layer.source)
