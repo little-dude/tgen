@@ -71,7 +71,7 @@ func (p *Port) WaitSend(call schemas.Port_waitSend) error {
 	default:
 		call.Results.SetError("")
 	}
-	call.Results.SetDone(p.isSending)
+	call.Results.SetDone(!p.isSending)
 	return nil
 }
 
@@ -83,7 +83,6 @@ func (p *Port) waitSend(timeout uint32) {
 	case <-p.sendDone:
 		p.isSending = false
 	case <-time.After(time.Millisecond * time.Duration(timeout)):
-		p.isSending = true
 	}
 }
 
@@ -124,9 +123,9 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 	}
 
 	p.isSending = true
-	_, _ = <-p.sendDone
 
 	go func() {
+
 		defer func() {
 			p.sendDone <- empty{}
 			Info.Println("Done sending on port", p)
@@ -153,5 +152,6 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 			}
 		}
 	}()
+
 	return nil
 }
