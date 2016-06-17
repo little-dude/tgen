@@ -14,7 +14,8 @@ class Port(object):
         self.name = res.config.name
 
     def start_send(self, stream_ids):
-        self.promise = self._capnp_port.startSend(stream_ids)
+        self._capnp_port.startSend(stream_ids).wait()
 
-    def wait(self):
-        self.promise.wait()
+    def wait_send(self, timeout=1):
+        res = self._capnp_port.waitSend(timeout).wait()
+        return (res.done, res.error)
