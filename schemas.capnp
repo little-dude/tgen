@@ -12,6 +12,7 @@ interface Port {
     getConfig    @0 ()                  -> (config :Config);
     setConfig    @1 (config :Config)    -> ();
     startSend    @2 (ids :List(UInt16)) -> ();
+    waitSend     @3 (timeout :UInt32)   -> (done :Bool, error :Text);
     # stopSend     @6  () -> ();
     # startCapture @3  () -> ();
     # stopCapture  @4  () -> ();
