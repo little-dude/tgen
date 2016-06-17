@@ -9,14 +9,21 @@ import (
 
 // Controller represent the controller running on the host.
 type Controller struct {
-	ports   []Port
-	streams []Stream
+	ports   map[string]*Port
+	streams map[uint16]*Stream
+}
+
+func NewController() *Controller {
+	return &Controller{
+		ports:   make(map[string]*Port),
+		streams: make(map[uint16]*Stream),
+	}
 }
 
 // GetPorts is a local implementation of the capnproto capability.
 func (c *Controller) GetPorts(call schemas.Controller_getPorts) error {
 	// retrieve the ports
-	e := c.getHostPorts()
+	e := c.refreshPorts()
 	if e != nil {
 		return e
 	}
@@ -29,15 +36,19 @@ func (c *Controller) GetPorts(call schemas.Controller_getPorts) error {
 
 	// populate the list
 	seg := call.Results.Segment()
-	for i, _ := range c.ports {
-		port := schemas.Port_ServerToClient(&c.ports[i])
+	i := 0
+	for portName, _ := range c.ports {
+		port := schemas.Port_ServerToClient(c.ports[portName])
 		ptr := capnp.NewInterface(seg, seg.Message().AddCap(port.Client)).ToPtr()
 		portsList.SetPtr(i, ptr)
+		i++
 	}
 	return nil
 }
 
-func (c *Controller) getHostPorts() error {
+func (c *Controller) refreshPorts() error {
+
+	// list the local ports
 	Info.Println("Listing local ports")
 	itfs, e := net.Interfaces()
 	if e != nil {
@@ -45,11 +56,32 @@ func (c *Controller) getHostPorts() error {
 		return NewError("Failed to list the interfaces:", e.Error())
 	}
 
-	c.ports = make([]Port, len(itfs))
-	for i, itf := range itfs {
-		c.ports[i] = Port{name: itf.Name, controller: c}
-		Info.Println("Found port:", itf.Name)
+	// add new ports
+	for _, itf := range itfs {
+		if _, ok := c.ports[itf.Name]; !ok {
+			c.ports[itf.Name] = NewPort(itf.Name, c)
+		}
 	}
+
+	// remove ports that no longer exist
+	garbagePorts := make([]string, 0)
+outer:
+	for portName, _ := range c.ports {
+		for _, itf := range itfs {
+			if itf.Name == portName {
+				continue outer
+			}
+		}
+		if c.ports[portName].isSending || c.ports[portName].isCapturing {
+			Error.Println("Port", portName, "not found but sending and/or capturing. Not removing it for now.")
+		} else {
+			garbagePorts = append(garbagePorts, portName)
+		}
+	}
+	for _, portName := range garbagePorts {
+		delete(c.ports, portName)
+	}
+
 	return nil
 }
 
@@ -60,59 +92,60 @@ func (c *Controller) ListStreams(call schemas.Controller_listStreams) error {
 		return e
 	}
 
-	for i, stream := range c.streams {
-		streamIDs.Set(i, stream.ID)
+	i := 0
+	for ID, _ := range c.streams {
+		streamIDs.Set(i, ID)
+		i++
 	}
+
 	return nil
 }
 
 func (c *Controller) newStreamID() (uint16, error) {
-	id := uint16(1)
-outer:
-	for true {
-		for _, stream := range c.streams {
-			if stream.ID == id {
-				id++
-				continue outer
-			}
+	ID := uint16(1)
+	for {
+		if _, ok := c.streams[ID]; ok {
+			ID++
+		} else {
+			return ID, nil
 		}
-		return id, nil
 	}
 	return 0, NewError("Failed to create new stream ID")
 }
 
 func (c *Controller) FetchStream(call schemas.Controller_fetchStream) error {
-	streamID := call.Params.Id()
-	Info.Println("Fetching stream with ID", strconv.Itoa(int(streamID)))
-	for _, stream := range c.streams {
-		if stream.ID == streamID { // We found the stream we need to return.
-			Info.Println("Stream ID", strconv.Itoa(int(streamID)), "found")
-			// Create a new capnp stream
-			capnpStream, e := call.Results.NewStream()
-			if e != nil {
-				return e
-			}
-			// Populate it
-			e = stream.ToCapnp(&capnpStream)
-			if e != nil {
-				return e
-			}
-			return nil
-		}
+	ID := call.Params.Id()
+	Info.Println("Fetching stream with ID", strconv.Itoa(int(ID)))
+
+	if _, ok := c.streams[ID]; !ok {
+		return NewError("Stream ID not found: ", strconv.Itoa(int(ID)))
 	}
-	// We did not find the stream with the corresponding stream ID, return an error
-	return NewError("Stream ID not found: ", strconv.Itoa(int(streamID)))
+	Info.Println("Stream ID", strconv.Itoa(int(ID)), "found")
+
+	// Create a new capnp stream
+	capnpStream, e := call.Results.NewStream()
+	if e != nil {
+		return e
+	}
+
+	// Populate it
+	e = c.streams[ID].ToCapnp(&capnpStream)
+	if e != nil {
+		return e
+	}
+
+	return nil
 }
 
 func (c *Controller) DeleteStream(call schemas.Controller_deleteStream) error {
-	streamID := call.Params.Id()
-	for i, stream := range c.streams {
-		if stream.ID == streamID {
-			c.streams = append(c.streams[:i], c.streams[i+1:]...)
-			return nil
-		}
+	ID := call.Params.Id()
+
+	if _, ok := c.streams[ID]; !ok {
+		return NewError("Cannot delete stream: stream ID", strconv.Itoa(int(ID)), "not found")
 	}
-	return NewError("Cannot delete stream: stream ID", strconv.Itoa(int(streamID)), "not found")
+
+	delete(c.streams, ID)
+	return nil
 }
 
 func saveStream(stream *Stream, capnpStream *schemas.Stream) error {
@@ -122,20 +155,6 @@ func saveStream(stream *Stream, capnpStream *schemas.Stream) error {
 	}
 	Info.Println("Preparing stream...", stream)
 	return stream.ToBytes()
-}
-
-func (c *Controller) getStream(ID uint16) (*Stream, error) {
-	for i := 0; i < len(c.streams); i++ {
-		// not `stream := c.streams[i]` because this creates a copy, and the
-		// pointer we return points to the copy.
-		// for the same reason we cannot use
-		// `for _, stream := range c.streams {}` to iterate over the streams
-		stream := &c.streams[i]
-		if stream.ID == ID {
-			return stream, nil
-		}
-	}
-	return nil, NewError("No stream with ID", strconv.Itoa(int(ID)), "found")
 }
 
 func (c *Controller) SaveStream(call schemas.Controller_saveStream) error {
@@ -151,29 +170,31 @@ func (c *Controller) SaveStream(call schemas.Controller_saveStream) error {
 		return e
 	}
 
-	streamID := capnpStream.Id()
+	ID := capnpStream.Id()
 
-	if streamID == 0 {
+	if ID == 0 {
 		Info.Println("Creating a new stream")
 		stream := Stream{}
-		streamID, e = c.newStreamID()
+		ID, e = c.newStreamID()
 		if e != nil {
 			return e
 		}
-		stream.ID = streamID
+		stream.ID = ID
 		e = saveStream(&stream, &capnpStream)
 		if e != nil {
 			return e
 		}
-		c.streams = append(c.streams, stream)
+		c.streams[ID] = &stream
 	} else {
-		Info.Println("Update stream with ID", strconv.Itoa(int(streamID)))
-		stream, e := c.getStream(streamID)
-		e = saveStream(stream, &capnpStream)
+		Info.Println("Update stream with ID", strconv.Itoa(int(ID)))
+		if _, ok := c.streams[ID]; !ok {
+			return NewError("No stream with ID", strconv.Itoa(int(ID)), "found")
+		}
+		e = saveStream(c.streams[ID], &capnpStream)
 		if e != nil {
 			return e
 		}
 	}
-	call.Results.SetId(streamID)
+	call.Results.SetId(ID)
 	return nil
 }

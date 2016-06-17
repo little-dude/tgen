@@ -18,7 +18,7 @@ func Serve() {
 	defer listener.Close() // Close the listener when the application closes.
 	Info.Println("Waiting for connections")
 
-	controller := schemas.Controller_ServerToClient(&Controller{})
+	controller := schemas.Controller_ServerToClient(NewController())
 	for true {
 		connection, e := listener.Accept()
 		if e != nil {
