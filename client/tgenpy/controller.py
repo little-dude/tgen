@@ -49,6 +49,14 @@ class Controller(object):
             streams.append(stream)
         return streams
 
+    def get_port(self, name):
+        ports = self.fetch_ports()
+        for port in ports:
+            port.get_config()
+            if port.name == name:
+                return port
+        raise ValueError('Port {} not found'.format(name))
+
     def save_stream(self, stream):
         capnp_stream = schemas.Stream.new_message()
         stream.to_capnp(capnp_stream)
