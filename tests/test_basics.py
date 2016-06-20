@@ -5,6 +5,8 @@ import pytest
 import tgenpy
 from tgenpy import protocols
 import logging
+from . import utils
+import netaddr
 
 # logging.basicConfig(level=logging.INFO)
 logging.basicConfig(level=logging.DEBUG)
@@ -154,3 +156,39 @@ def test_long_field(controller):
     controller.save_stream(stream)
     layer = stream.layers[0]
     check_new(layer.source)
+
+
+@pytest.mark.usefixtures('create_ports')
+def test_ethernet2(controller):
+
+    eth = protocols.Ethernet2()
+
+    eth.source.mode = 'increment'
+    eth.source.step = 1
+    eth.source.mask = 0x0000000000ff
+    eth.source.count = 256
+
+    eth.destination.value = 0xffffffffffff
+    eth.destination.mode = 'decrement'
+    eth.destination.step = 0x010000000000
+    eth.destination.mask = 0xff0000000000
+    eth.destination.count = 256
+
+    # add dummy ip layer, otherwise pyshark refuses to load the frames
+    ip = protocols.IPv4()
+
+    stream = tgenpy.Stream(layers=[eth, ip])
+    stream.count = 256
+    controller.save_stream(stream)
+
+    tx = controller.get_port('testveth0')
+    rx = controller.get_port('testveth1')
+    with utils.Capture(rx, count=256) as capture:
+        tx.start_send([stream.id])
+        packets = capture.get_packets(timeout=5000)
+
+    for idx, packet in enumerate(packets):
+        ethernet = packet.eth
+        assert netaddr.EUI(ethernet.src).value == idx
+        assert netaddr.EUI(ethernet.dst).value == 0xffffffffffff - (idx << (5*8))
+        assert int(ethernet.type, 16) == 0x800

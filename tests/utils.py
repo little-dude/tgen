@@ -9,7 +9,7 @@ import os
 import sys
 import re
 import six
-# import pyshark
+import pyshark
 from pyroute2 import IPRoute
 from threading import Thread
 # from multiprocessing import Process
@@ -177,6 +177,33 @@ def ensure_native_str(data, encoding='utf-8'):
         return data.decode(encoding)
     raise ValueError('cannot ensure_native_str from type %r' % (type(data,)))
 
+
+class Capture(object):
+
+    def __init__(self, port, count=0, timeout=0):
+        self.port = port
+        self.capture_file = 'tmp.pcap'
+        self.count = count
+        self.timeout = timeout
+
+    def __enter__(self):
+        self.port.start_capture(
+            self.capture_file,
+            timeout=self.timeout,
+            packet_count=self.count)
+        return self
+
+    def get_packets(self, timeout=0):
+        done, error = self.port.wait_capture(timeout=timeout)
+        assert done is True
+        assert error == ''
+        capture = pyshark.FileCapture(self.capture_file)
+        capture.load_packets()
+        return capture
+
+    def __exit__(self, type, value, traceback):
+        # TODO: not sure if we need to do anything here
+        pass
 
 # class Capture(object):
 #
