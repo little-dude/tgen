@@ -15,7 +15,9 @@ type LongField struct {
 }
 
 func (field *LongField) GetValue() []byte {
-	return field.Value
+	value := make([]byte, len(field.Value))
+	copy(value, field.Value)
+	return value
 }
 
 func (field *LongField) SetValue(value []byte) {
@@ -27,7 +29,9 @@ func (field *LongField) SetValue(value []byte) {
 }
 
 func (field *LongField) GetMask() []byte {
-	return field.Mask
+	mask := make([]byte, len(field.Mask))
+	copy(mask, field.Mask)
+	return mask
 }
 
 func (field *LongField) SetMask(mask []byte) {
@@ -39,7 +43,9 @@ func (field *LongField) SetMask(mask []byte) {
 }
 
 func (field *LongField) GetStep() []byte {
-	return field.Step
+	step := make([]byte, len(field.Step))
+	copy(step, field.Step)
+	return step
 }
 
 func (field *LongField) SetStep(step []byte) {

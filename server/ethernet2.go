@@ -108,8 +108,8 @@ func (ethernet2 *Ethernet2) ToPackets() []gopacket.SerializableLayer {
 	for i := uint32(0); i < count; i++ {
 		ethernet2.SetFields(uint(i))
 		res[i] = &layers.Ethernet{
-			SrcMAC:       net.HardwareAddr(ethernet2.source.Value),
-			DstMAC:       net.HardwareAddr(ethernet2.destination.Value),
+			SrcMAC:       net.HardwareAddr(ethernet2.source.GetValue()),
+			DstMAC:       net.HardwareAddr(ethernet2.destination.GetValue()),
 			EthernetType: layers.EthernetType(ethernet2.ethernetType.Value),
 		}
 	}
