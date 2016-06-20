@@ -192,3 +192,12 @@ def test_ethernet2(controller):
         assert netaddr.EUI(ethernet.src).value == idx
         assert netaddr.EUI(ethernet.dst).value == 0xffffffffffff - (idx << (5*8))
         assert int(ethernet.type, 16) == 0x800
+
+
+@pytest.mark.usefixtures('create_ports')
+def test_capture_blocking(controller):
+    port = controller.get_port('testveth0')
+    for i in range(0, 10):
+        port.start_capture("dummy")
+        port.stop_capture()
+        port.wait_capture()
