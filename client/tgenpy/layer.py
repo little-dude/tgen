@@ -134,10 +134,10 @@ class Field(object):
 class FieldMode(object):
 
     FIXED = 0
-    INCREMENT = 1
-    DECREMENT = 2
-    RANDOMIZE = 3
-    AUTO = 4
+    AUTO = 1
+    INCREMENT = 2
+    DECREMENT = 3
+    RANDOMIZE = 4
 
 MODES_MAPPING = {
     'fixed': FieldMode.FIXED,
