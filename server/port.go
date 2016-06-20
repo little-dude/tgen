@@ -2,8 +2,12 @@ package server
 
 import (
 	// "github.com/google/gopacket/pfring" FIXME: pf_ring does seem to work :(
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 	"github.com/little-dude/tgen/schemas"
+	"os"
 	"strconv"
 	"time"
 	// "zombiezen.com/go/capnproto2"
@@ -29,13 +33,13 @@ func NewPort(name string, controller *Controller) *Port {
 		name:         name,
 		controller:   controller,
 		isSending:    false,
-		sendDone:     make(chan empty),
-		sendStop:     make(chan empty),
-		sendError:    make(chan error),
+		sendDone:     make(chan empty, 1),
+		sendStop:     make(chan empty, 1),
+		sendError:    make(chan error, 1),
 		isCapturing:  false,
-		captureDone:  make(chan empty),
-		captureStop:  make(chan empty),
-		captureError: make(chan error),
+		captureDone:  make(chan empty, 1),
+		captureStop:  make(chan empty, 1),
+		captureError: make(chan error, 1),
 	}
 }
 
@@ -122,8 +126,6 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 		return NewError("Failed to create the pcap handle: ", e.Error())
 	}
 
-	p.isSending = true
-
 	go func() {
 
 		defer func() {
@@ -153,5 +155,166 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 		}
 	}()
 
+	p.isSending = true
+
+	// wait a little bit to make sure the transmitting goroutine is running,
+	// before returning.
+	// FIXME: we could do this properly with a semaphore or something
+	time.Sleep(time.Millisecond * 100)
+
 	return nil
+}
+
+func (p *Port) waitCapture(timeout uint32) {
+	if timeout == 0 {
+		<-p.captureDone
+		p.isCapturing = false
+		return
+	}
+	select {
+	case <-p.captureDone:
+		p.isCapturing = false
+	case <-time.After(time.Millisecond * time.Duration(timeout)):
+	}
+}
+
+func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
+	timeout := call.Params.Timeout()
+	if !p.isCapturing {
+		call.Results.SetDone(true)
+		call.Results.SetError("")
+		return nil
+	}
+	p.waitCapture(timeout)
+	select {
+	case e := <-p.captureError:
+		call.Results.SetError(e.Error())
+	default:
+		call.Results.SetError("")
+	}
+	call.Results.SetDone(!p.isCapturing)
+	return nil
+}
+
+func (p *Port) StopCapture(call schemas.Port_stopCapture) error {
+	if !p.isCapturing {
+		return NewError(p.name, "is not capturing")
+	}
+	select {
+	case p.captureStop <- empty{}:
+		Trace.Println("Sending signal to stop capture")
+		return nil
+	default:
+		return NewError("Could not send signal to stop capture")
+	}
+	// case <-time.After(time.Millisecond * time.Duration(100)):
+	// }
+}
+
+func (p *Port) newCaptureError(msg string, e error) {
+	select {
+	case p.captureError <- e:
+	default:
+	}
+	Error.Println(msg, ":", e.Error())
+}
+
+func (p *Port) StartCapture(call schemas.Port_startCapture) error {
+	if p.isCapturing {
+		return NewError(p.name, " is already capturing")
+	}
+
+	path, e := call.Params.SavePath()
+	if e != nil {
+		return e
+	}
+	snapshotLen := call.Params.SnapshotLength()
+	// FIXME: check for overflow
+	timeout := time.Duration(time.Second * time.Duration(call.Params.Timeout()))
+	packetCount := call.Params.PacketCount()
+	promiscuous := call.Params.Promiscuous()
+
+	p.captureStop = make(chan empty, 1)
+	p.captureError = make(chan error, 1)
+	started := make(chan empty, 1)
+	go p.capture(path, snapshotLen, timeout, packetCount, promiscuous, started)
+
+	select {
+	case <-started:
+		p.isCapturing = true
+		Info.Println("capture started on", p.name)
+		return nil
+	case <-time.After(3 * time.Second):
+		return NewError("Capture did not start after 3 seconds")
+	}
+	return NewError("Unknown error")
+}
+
+func (p *Port) capture(path string, snapshotLen uint32, timeout time.Duration, packetCount uint32, promiscuous bool, started chan empty) {
+
+	defer func() {
+		select {
+		case p.captureDone <- empty{}:
+		default:
+		}
+	}()
+
+	Trace.Println("Creating capture file", path)
+	f, e := os.Create(path)
+	if e != nil {
+		p.newCaptureError("Could not create capture file", e)
+		return
+	}
+
+	defer func() {
+		e := f.Close()
+		if e != nil {
+			p.newCaptureError("Could not close capture file properly", e)
+		}
+	}()
+
+	writer := pcapgo.NewWriter(f)
+	writer.WriteFileHeader(snapshotLen, layers.LinkTypeEthernet)
+
+	// FIXME: snapshotLen should be int32 or uint32?
+	Trace.Println("Creating handle for capture")
+	handle, e := pcap.OpenLive(p.name, int32(snapshotLen), promiscuous, timeout)
+	if e != nil {
+		p.newCaptureError("Could not create capture file", e)
+		return
+	}
+	defer func() {
+		// FIXME: this sometime hangs. As a result we cannot close the handle
+		// properly for now.
+		// handle.Close()
+	}()
+
+	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+
+	count := uint32(0)
+	var packet gopacket.Packet
+	started <- empty{}
+
+	for {
+		select {
+		case <-p.captureStop:
+			Trace.Println("Received signal to stop capture")
+			return
+		default:
+			select {
+			case packet = <-packetSource.Packets():
+				count++
+				e = writer.WritePacket(packet.Metadata().CaptureInfo, packet.Data())
+				if e != nil {
+					p.newCaptureError("Failed to write captured packet", e)
+				}
+				if packetCount > uint32(0) && packetCount == count {
+					Info.Println("Received enough packets, sotpping capture")
+					return
+				}
+			case <-time.After(time.Millisecond * time.Duration(100)):
+				continue
+			}
+		}
+	}
 }

@@ -86,7 +86,10 @@ func (s *Stream) ToBytes() error {
 	for i, l := range s.Layers {
 		layers[i] = l.ToPackets()
 	}
-	opts := gopacket.SerializeOptions{}
+	opts := gopacket.SerializeOptions{
+		FixLengths:       true,
+		ComputeChecksums: true,
+	}
 	var buf gopacket.SerializeBuffer
 	if s.Count == 0 {
 		return NewError("packet count is 0: cannot create stream data")
