@@ -11,13 +11,18 @@
 ### Build steps
 
 - server side:
-    - clone this repo: `git clone https://github.mv.usa.alcatel.com/corentih/tgen`
-    - make [go-capnproto2](https://github.com/zombiezen/go-capnproto2/) available in your `$GOPATH`: `go get github.com/zombiezen/go-capnproto2/`
-    - run `make go`. A `tgen` binary should be built. Look at the help with `./tgen -h`
+    - clone this repo: `git clone
+      https://github.mv.usa.alcatel.com/corentih/tgen`
+    - make [go-capnproto2](https://github.com/zombiezen/go-capnproto2/)
+      available in your `$GOPATH`: `go get github.com/zombiezen/go-capnproto2/`
+    - run `make go`. A `tgen` binary should be built. Look at the help with
+      `./tgen -h`
 - python client:
     - create a virtual environment and activate it
-    - run `make py`. A `tar.gz` package should be built under `client/dist/tgenpy<version>.tar.gz`.
-    - install the package with `pip install client/dist/tgenpy<version>.tar.gz`.
+    - run `make py`. A `tar.gz` package should be built under
+      `client/dist/tgenpy<version>.tar.gz`.
+    - install the package with `pip install
+      client/dist/tgenpy<version>.tar.gz`.
 
 ## Usage:
 
@@ -37,8 +42,15 @@ stream.count = 1000
 # save the stream
 controller.save_stream(stream)
 
-# fetch the ports, find the loopback interface, and send the stream over it:
-for port in controller.fetch_ports():
-    if port.name == 'lo':
-        port.send(stream.id)
+# fetch the ports, find the loopback interface, and send and capture traffic:
+port = controller.get_port('lo'):
+    port.start_capture(packet_count=1000)
+    port.start_send([stream.id])
+    done, error = port.wait_capture(timeout=5000)
+    if not done:
+        print "capture did not finish after 5 seconds"
+        port.stop_capture()
+        port.wait_capture(timeout=2000)
+    if error:
+        print 'something when wrong: %s' % error
 ```
