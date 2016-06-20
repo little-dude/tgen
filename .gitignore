@@ -36,3 +36,5 @@ client/env2
 client/env3
 
 tests/.cache
+tests/*.out
+tests/test.pcap
