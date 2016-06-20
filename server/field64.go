@@ -78,8 +78,8 @@ func (field *Field64) SetMode(mode uint8) {
 	}
 }
 
-func (field Field64) SetCurrentValue(index uint) {
-	if index%uint(field.Count) == 0 {
+func (field *Field64) SetCurrentValue(index uint) {
+	if index%uint(field.Count) == 0 && field.Mode != RANDOMIZE {
 		field.Value = field.FirstValue
 		return
 	}
@@ -93,14 +93,14 @@ func (field Field64) SetCurrentValue(index uint) {
 	}
 }
 
-func (field Field64) Increment() {
+func (field *Field64) Increment() {
 	field.Value = (field.Value & (^field.Mask)) | ((field.Value + field.Step) & field.Mask)
 }
 
-func (field Field64) Decrement() {
+func (field *Field64) Decrement() {
 	field.Value = (field.Value & (^field.Mask)) | ((field.Value - field.Step) & field.Mask)
 }
 
-func (field Field64) Randomize() {
+func (field *Field64) Randomize() {
 	field.Value = uint64(rand.Int63()) & field.Mask
 }

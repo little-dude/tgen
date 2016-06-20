@@ -58,10 +58,12 @@ func (field *Field16) GetCount() uint16 {
 }
 
 func (field *Field16) SetCount(count uint16) {
-	if count > 1 {
-		field.Count = count % field.FullMask
-	} else {
+	if count > field.FullMask {
+		field.Count = field.FullMask + 1
+	} else if field.Count == 0 {
 		field.Count = 1
+	} else {
+		field.Count = count
 	}
 }
 
@@ -78,8 +80,8 @@ func (field *Field16) SetMode(mode uint8) {
 	}
 }
 
-func (field Field16) SetCurrentValue(index uint) {
-	if index%uint(field.Count) == 0 {
+func (field *Field16) SetCurrentValue(index uint) {
+	if index%uint(field.Count) == 0 && field.Mode != RANDOMIZE {
 		field.Value = field.FirstValue
 		return
 	}
@@ -93,14 +95,14 @@ func (field Field16) SetCurrentValue(index uint) {
 	}
 }
 
-func (field Field16) Increment() {
+func (field *Field16) Increment() {
 	field.Value = (field.Value & (^field.Mask)) | ((field.Value + field.Step) & field.Mask)
 }
 
-func (field Field16) Decrement() {
+func (field *Field16) Decrement() {
 	field.Value = (field.Value & (^field.Mask)) | ((field.Value - field.Step) & field.Mask)
 }
 
-func (field Field16) Randomize() {
+func (field *Field16) Randomize() {
 	field.Value = uint16(rand.Int31()) & field.Mask
 }

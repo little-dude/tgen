@@ -82,7 +82,7 @@ func (field *LongField) SetMode(mode uint8) {
 }
 
 func (field *LongField) SetCurrentValue(index uint) {
-	if index%uint(field.Count) == 0 {
+	if index%uint(field.Count) == 0 && field.Mode != RANDOMIZE {
 		field.Value = field.FirstValue
 		return
 	}

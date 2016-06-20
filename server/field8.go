@@ -43,10 +43,12 @@ func (field *Field8) GetCount() uint16 {
 }
 
 func (field *Field8) SetCount(count uint16) {
-	if count > 1 {
-		field.Count = count % uint16(field.FullMask)
-	} else {
+	if count > uint16(field.FullMask)+1 {
+		field.Count = uint16(field.FullMask) + 1
+	} else if field.Count == 0 {
 		field.Count = 1
+	} else {
+		field.Count = count
 	}
 }
 
@@ -76,7 +78,7 @@ func (field *Field8) Randomize() {
 }
 
 func (field *Field8) SetCurrentValue(index uint) {
-	if index%uint(field.Count) == 0 {
+	if index%uint(field.Count) == 0 && field.Mode != RANDOMIZE {
 		field.Value = field.FirstValue
 		return
 	}
