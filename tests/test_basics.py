@@ -198,6 +198,6 @@ def test_ethernet2(controller):
 def test_capture_blocking(controller):
     port = controller.get_port('testveth0')
     for i in range(0, 10):
-        port.start_capture("dummy")
+        port.start_capture("test.pcap")
         port.stop_capture()
         port.wait_capture()

@@ -35,6 +35,7 @@ client/tgenpy/schemas.capnp
 client/env2
 client/env3
 
-tests/.cache
+.cache/
+tests/.cache/
 tests/*.out
 tests/test.pcap

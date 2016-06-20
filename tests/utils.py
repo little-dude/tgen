@@ -182,7 +182,7 @@ class Capture(object):
 
     def __init__(self, port, count=0, timeout=0):
         self.port = port
-        self.capture_file = 'tmp.pcap'
+        self.capture_file = 'test.pcap'
         self.count = count
         self.timeout = timeout
 
