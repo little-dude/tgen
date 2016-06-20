@@ -9,8 +9,10 @@ import os
 import sys
 import re
 import six
+# import pyshark
 from pyroute2 import IPRoute
 from threading import Thread
+# from multiprocessing import Process
 from tgenpy import Controller
 
 try:
@@ -146,13 +148,6 @@ def restart_tgen():
     return Controller('localhost')
 
 
-def cleanup():
-    global TGEN
-    if isinstance(TGEN, Popen):
-        if TGEN.poll() is None:
-            kill_tgen()
-
-
 def ensure_text(data, encoding='utf-8'):
     # copy-pasted from:
     # https://github.com/jparyani/pycapnp/issues/92#issue-138016674
@@ -181,6 +176,50 @@ def ensure_native_str(data, encoding='utf-8'):
     elif six.PY3 and isinstance(data, six.binary_type):  # py3 "bytes"
         return data.decode(encoding)
     raise ValueError('cannot ensure_native_str from type %r' % (type(data,)))
+
+
+# class Capture(object):
+#
+#     def __init__(self, interface, packets=0, timeout=0):
+#         self.interface = interface
+#         self.packets = packets
+#         self.timeout = timeout
+#
+#     def __enter__(self):
+#         self.start_capture()
+#         return self
+#
+#     def __exit__(self, type, value, traceback):
+#         # TODO: not sure if we need to do anything here
+#         pass
+#
+#     def start_capture(self):
+#         self.capture = pyshark.LiveCapture(interface=self.interface)
+#         self.capture.set_debug()
+#
+#         def load_packets(*args, **kwargs):
+#             sys.stdout = open(str(os.getpid()) + ".out", "w")
+#             return self.capture.load_packets(*args, **kwargs)
+#
+#         self.capture_process = Process(
+#             target=load_packets,
+#             kwargs={
+#                 'packet_count': self.packets,
+#                 'timeout': self.timeout
+#             }
+#         )
+#         self.capture_process.start()
+#
+#     def wait(self):
+#         self.capture_process.join()
+#         return self.capture
+
+
+def cleanup():
+    global TGEN
+    if isinstance(TGEN, Popen):
+        if TGEN.poll() is None:
+            kill_tgen()
 
 
 atexit.register(cleanup)
