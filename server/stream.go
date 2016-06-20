@@ -86,6 +86,7 @@ func (s *Stream) ToBytes() error {
 	for i, l := range s.Layers {
 		layers[i] = l.ToPackets()
 	}
+	// FIXME: there should be a way to override these for each layer
 	opts := gopacket.SerializeOptions{
 		FixLengths:       true,
 		ComputeChecksums: true,
