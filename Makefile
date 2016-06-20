@@ -9,8 +9,8 @@ all: go py
 
 BUILD_DATE  = $(shell date +%Y-%m-%d.%H:%M)
 GIT_BRANCH  = $(shell git rev-parse --abbrev-ref HEAD)
-GIT_TAG     = $(shell git describe --abbrev=0)
-GIT_COMMITS = $(shell git rev-list --count $$(git describe --abbrev=0)..HEAD)
+GIT_TAG     = $(shell git describe --abbrev=0 --tags)
+GIT_COMMITS = $(shell git rev-list --count $$(git describe --abbrev=0 --tags)..HEAD)
 GIT_HASH    = $(shell git rev-list --abbrev-commit -n 1 HEAD)
 GIT_DIRTY   = $(shell git diff-index --quiet HEAD -- || echo dirty)
 ifeq ($(GIT_DIRTY),dirty)
