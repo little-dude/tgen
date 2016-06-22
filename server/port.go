@@ -276,8 +276,6 @@ func (p *Port) capture(c chan []*RawPacket, handle *pcap.Handle, pktCount uint32
 	defer handle.Close()
 	defer close(c)
 
-	// We can buffer up to 1M packets. With an average packet size of 576kB
-	// packet size, that's about 550M which seems big enough.
 	buffers := make([][]*RawPacket, 0, 1000) // 1k buffers
 	count := uint32(0)
 main:
