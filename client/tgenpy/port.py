@@ -20,14 +20,12 @@ class Port(object):
         res = self._capnp_port.waitSend(timeout).wait()
         return (res.done, res.error)
 
-    def start_capture(self, savePath, snapshot_length=9999, promiscuous=True,
-                      packet_count=0, timeout=0):
-        self._capnp_port.startCapture(savePath, snapshot_length, timeout,
-                                      packet_count, promiscuous).wait()
+    def start_capture(self, file_path, packet_count=0):
+        self._capnp_port.startCapture(file_path, packet_count).wait()
 
     def wait_capture(self, timeout=0):
         res = self._capnp_port.waitCapture(timeout).wait()
-        return (res.done, res.error)
+        return res.done
 
     def stop_capture(self):
         self._capnp_port.stopCapture().wait()

@@ -9,14 +9,14 @@ interface Controller {
 }
 
 interface Port {
-    getConfig    @0 ()                  -> (config :Config);
-    setConfig    @1 (config :Config)    -> ();
-    startSend    @2 (ids :List(UInt16)) -> ();
-    waitSend     @3 (timeout :UInt32)   -> (done :Bool, error :Text);
+    getConfig    @0 ()                                   -> (config :Config);
+    setConfig    @1 (config :Config)                     -> ();
+    startSend    @2 (ids :List(UInt16))                  -> ();
+    waitSend     @3 (timeout :UInt32)                    -> (done :Bool, error :Text);
     # stopSend    @6  () -> ();
-    startCapture @4 (savePath :Text, snapshotLength :UInt32, timeout :UInt32, packetCount :UInt32, promiscuous :Bool) -> ();
-    waitCapture  @5 (timeout :UInt32)   -> (done :Bool, error :Text);
-    stopCapture  @6 () -> ();
+    startCapture @4 (filePath:Text, packetCount :UInt32) -> ();
+    waitCapture  @5 (timeout :UInt32)                    -> (done :Bool);
+    stopCapture  @6 ()                                   -> ();
     # getStats     @5  () -> ();
     # clearStats   @6  () -> ();
     # saveCapture  @7  () -> ();
