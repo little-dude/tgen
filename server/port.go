@@ -7,7 +7,6 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/pcapgo"
 	"github.com/little-dude/tgen/schemas"
-	"io"
 	"os"
 	"strconv"
 	"time"
@@ -19,7 +18,6 @@ type empty struct{}
 type RawPacket struct {
 	data []byte
 	ci   gopacket.CaptureInfo
-	err  error
 }
 
 type Port struct {
@@ -211,7 +209,7 @@ func (p *Port) StartCapture(call schemas.Port_startCapture) error {
 		return NewError(e.Error())
 	}
 
-	handle, e := pcap.OpenLive(p.name, 65635, true, time.Millisecond*20)
+	handle, e := pcap.OpenLive(p.name, 65635, true, time.Millisecond*10)
 	if e != nil {
 		return NewError("Could not create pcap handle:", e.Error())
 	}
@@ -221,7 +219,7 @@ func (p *Port) StartCapture(call schemas.Port_startCapture) error {
 		return NewError("Could create capture file:", e.Error())
 	}
 
-	p.captureStop = make(chan empty)
+	p.captureStop = make(chan empty, 1)
 	c := make(chan []*RawPacket)
 
 	Info.Println("Starting capture")
@@ -252,6 +250,9 @@ func (p *Port) saveCapture(c chan []*RawPacket, f *os.File) {
 }
 
 func sendBuf(buffers [][]*RawPacket, c chan []*RawPacket) (remaining [][]*RawPacket) {
+	// TODO: investigate why when writing on tmpfs we have better perf. One
+	// idea it that `select` is slower when the chan cannot receive data, which
+	// happens more often when writing is slow.
 	select {
 	case c <- buffers[0]:
 		buffers = buffers[1:]
@@ -261,6 +262,16 @@ func sendBuf(buffers [][]*RawPacket, c chan []*RawPacket) (remaining [][]*RawPac
 	}
 }
 
+func minPkt(count, pktCount uint32) uint32 {
+	if pktCount == 0 {
+		return 1000
+	}
+	if pktCount-count > 1000 {
+		return 1000
+	}
+	return pktCount - count
+}
+
 func (p *Port) capture(c chan []*RawPacket, handle *pcap.Handle, pktCount uint32) {
 	defer handle.Close()
 	defer close(c)
@@ -268,47 +279,41 @@ func (p *Port) capture(c chan []*RawPacket, handle *pcap.Handle, pktCount uint32
 	// We can buffer up to 1M packets. With an average packet size of 576kB
 	// packet size, that's about 550M which seems big enough.
 	buffers := make([][]*RawPacket, 0, 1000) // 1k buffers
-	buf := make([]*RawPacket, 1000)          // 1k packets per buffer
-	idx := 0
 	count := uint32(0)
+main:
 	for count < pktCount || pktCount == 0 {
-		// read one packet
-		data, ci, e := handle.ReadPacketData()
-		if e == io.EOF {
-			break
-		} else if e == nil {
-			count++
-
-			// store it
-			buf[idx] = &RawPacket{
-				data: data,
-				ci:   ci,
-				err:  e,
-			}
-			idx++
-
-			// when a buffer is full, try to send one the oldest buffer to the
-			// goroutine writing the pcap file, but without blocking, because in
-			// the meantime packets may be incoming.
-			if idx == 1000 {
-				buffers = append(buffers, buf)
-				buf = make([]*RawPacket, 1000)
-				idx = 0
-				buffers = sendBuf(buffers, c)
+		bufSize := minPkt(count, pktCount)
+		buf := make([]*RawPacket, bufSize)
+		for i := uint32(0); i < bufSize; i++ {
+			for {
+				data, ci, e := handle.ReadPacketData()
+				if e == nil {
+					buf[i] = &RawPacket{data: data, ci: ci}
+					count++
+					break
+				}
+				// check if we should stop the capture
+				select {
+				case <-p.captureStop:
+					break main
+				default:
+				}
 			}
 		}
 
-		// check if we should stop the capture
-		select {
-		case <-p.captureStop:
-			break
-		default:
+		buffers = append(buffers, buf)
+		buffers = sendBuf(buffers, c)
+		if cap(buffers) == 0 {
+			// we filled all our buffers already. we need to allocate more
+			// memory, and copy over all the buffers which is not great.
+			more := make([][]*RawPacket, len(buffers), 2*len(buffers))
+			copy(more, buffers)
+			buffers = more
 		}
 	}
 
 	// wait for all the buffers to be consumed. this can take a while
 	Info.Println("stopping capturing", count, "packets. waiting capture file to be written")
-	buffers = append(buffers, buf[:idx])
 	for i := 0; i < len(buffers); i++ {
 		c <- buffers[i] // if we have a lot of buffers, this can take very long
 	}
