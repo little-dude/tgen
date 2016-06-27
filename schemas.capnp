@@ -15,7 +15,7 @@ interface Port {
     waitSend     @3 (timeout :UInt32)                    -> (done :Bool, error :Text);
     # stopSend    @6  () -> ();
     startCapture @4 (filePath:Text, packetCount :UInt32) -> ();
-    waitCapture  @5 (timeout :UInt32)                    -> (done :Bool);
+    waitCapture  @5 (timeout :UInt32)                    -> (done :Bool, received :UInt32, dropped :UInt32);
     stopCapture  @6 ()                                   -> ();
     # getStats     @5  () -> ();
     # clearStats   @6  () -> ();
