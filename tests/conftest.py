@@ -3,7 +3,7 @@ import pytest
 from . import utils
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def create_ports(request):
     def teardown():
         utils.delete_veth_pair('testveth')
