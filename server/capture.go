@@ -88,7 +88,7 @@ func (c *Capture) Wait(timeout uint32) error {
 	}
 	start := time.Now()
 	t := time.Millisecond * time.Duration(timeout)
-	for time.Now().Sub(start) < t {
+	for time.Now().Sub(start) < t || timeout == 0 {
 		if c.State() == Done {
 			return nil
 		}
@@ -111,7 +111,7 @@ func NewCapture(captureFile string, port string, pktCount uint32) (*Capture, err
 
 	c := Capture{
 		cfast:    make(chan Buffer, 1000),
-		cslow:    make(chan Buffer),
+		cslow:    make(chan Buffer, 1),
 		pktCount: pktCount,
 		state:    NotStarted,
 	}
@@ -161,7 +161,7 @@ main:
 			count += uint32(len(buf))
 			if count >= c.pktCount && c.pktCount > 0 {
 				Info.Println("received", count, "packets: stopping capture")
-				buffers = append(buffers, buf[:count-c.pktCount])
+				buffers = append(buffers, buf[:c.pktCount-(count-uint32(len(buf)))])
 				c.SetStop()
 				break main
 			}
@@ -204,9 +204,15 @@ main:
 					buf[i] = &RawPacket{data: data, ci: ci}
 					last = i
 					break
-				} else {
+				} else if e == pcap.NextErrorTimeoutExpired {
 					if c.ShouldStop() {
 						break main
+					}
+					if last >= 0 {
+						select {
+						case c.cfast <- buf[:last+1]:
+						default:
+						}
 					}
 				}
 			}

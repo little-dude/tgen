@@ -152,7 +152,6 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 }
 
 func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
-
 	timeout := call.Params.Timeout()
 	p.capture.Wait(timeout)
 
@@ -193,5 +192,6 @@ func (p *Port) StartCapture(call schemas.Port_startCapture) error {
 	if e != nil {
 		return NewError("failed to start capture:", e.Error())
 	}
+	Info.Println("starting capture on", p.name)
 	return nil
 }
