@@ -25,7 +25,7 @@ class Port(object):
 
     def wait_capture(self, timeout=0):
         res = self._capnp_port.waitCapture(timeout).wait()
-        return res.done
+        return res.done, res.received, res.dropped
 
     def stop_capture(self):
         self._capnp_port.stopCapture().wait()
