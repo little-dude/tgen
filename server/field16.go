@@ -60,7 +60,7 @@ func (field *Field16) GetCount() uint16 {
 func (field *Field16) SetCount(count uint16) {
 	if count > field.FullMask {
 		field.Count = field.FullMask + 1
-	} else if field.Count == 0 {
+	} else if count == 0 {
 		field.Count = 1
 	} else {
 		field.Count = count
