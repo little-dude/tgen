@@ -180,66 +180,25 @@ def ensure_native_str(data, encoding='utf-8'):
 
 class Capture(object):
 
-    def __init__(self, port, count=0, timeout=0):
+    def __init__(self, port, count=0):
         self.port = port
         self.capture_file = 'test.pcap'
         self.count = count
-        self.timeout = timeout
 
     def __enter__(self):
         self.port.start_capture(
-            self.capture_file,
-            timeout=self.timeout,
-            packet_count=self.count)
+            self.capture_file, packet_count=self.count)
         return self
 
     def get_packets(self, timeout=0):
-        done, error = self.port.wait_capture(timeout=timeout)
+        done, received, dropped = self.port.wait_capture(timeout=timeout)
         assert done is True
-        assert error == ''
         capture = pyshark.FileCapture(self.capture_file)
         capture.load_packets()
-        return capture
+        return (capture, (received, dropped))
 
     def __exit__(self, type, value, traceback):
-        # TODO: not sure if we need to do anything here
         pass
-
-# class Capture(object):
-#
-#     def __init__(self, interface, packets=0, timeout=0):
-#         self.interface = interface
-#         self.packets = packets
-#         self.timeout = timeout
-#
-#     def __enter__(self):
-#         self.start_capture()
-#         return self
-#
-#     def __exit__(self, type, value, traceback):
-#         # TODO: not sure if we need to do anything here
-#         pass
-#
-#     def start_capture(self):
-#         self.capture = pyshark.LiveCapture(interface=self.interface)
-#         self.capture.set_debug()
-#
-#         def load_packets(*args, **kwargs):
-#             sys.stdout = open(str(os.getpid()) + ".out", "w")
-#             return self.capture.load_packets(*args, **kwargs)
-#
-#         self.capture_process = Process(
-#             target=load_packets,
-#             kwargs={
-#                 'packet_count': self.packets,
-#                 'timeout': self.timeout
-#             }
-#         )
-#         self.capture_process.start()
-#
-#     def wait(self):
-#         self.capture_process.join()
-#         return self.capture
 
 
 def cleanup():
