@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+type Capture struct {
+	state    IOState
+	stop     bool
+	stats    Stats
+	mtx      sync.RWMutex
+	Packets  chan *RawPacket
+	pktCount uint32
+	port     string
+}
+
 type RawPacket struct {
 	data []byte
 	ci   gopacket.CaptureInfo
@@ -17,32 +27,7 @@ type RawPacket struct {
 
 type Buffer []*RawPacket
 
-type CaptureState struct {
-	Started bool
-	Done    bool
-}
-
-var NotStarted = CaptureState{}
-var Started = CaptureState{Started: true}
-var Done = CaptureState{Done: true}
-
-type Capture struct {
-	state    CaptureState
-	stop     bool
-	stats    Stats
-	mtx      sync.RWMutex
-	cfast    chan Buffer
-	cslow    chan Buffer
-	pktCount uint32
-}
-
-type Stats struct {
-	Received uint32
-	KDropped uint32
-	IDropped uint32
-}
-
-func (c *Capture) SetStop() {
+func (c *Capture) Stop() {
 	c.mtx.Lock()
 	c.stop = true
 	c.mtx.Unlock()
@@ -54,13 +39,13 @@ func (c *Capture) ShouldStop() bool {
 	return c.stop
 }
 
-func (c *Capture) State() CaptureState {
+func (c *Capture) State() IOState {
 	c.mtx.RLock()
 	defer c.mtx.RUnlock()
 	return c.state
 }
 
-func (c *Capture) SetState(newState CaptureState) {
+func (c *Capture) SetState(newState IOState) {
 	defer c.mtx.Unlock()
 	c.mtx.Lock()
 	c.state = newState
@@ -82,7 +67,7 @@ func (c *Capture) Stats() (Stats, error) {
 	panic("Unknown state")
 }
 
-func (c *Capture) Wait(timeout uint32) error {
+func (c *Capture) Join(timeout uint32) error {
 	if c.State() == NotStarted {
 		return NewError("no capture to wait for")
 	}
@@ -97,104 +82,179 @@ func (c *Capture) Wait(timeout uint32) error {
 	return NewError("capture did not finish")
 }
 
-func NewCapture(captureFile string, port string, pktCount uint32) (*Capture, error) {
-
-	f, e := os.Create(captureFile)
-	if e != nil {
-		return &Capture{}, NewError("Could not create capture file:", e.Error())
-	}
-
-	handle, e := pcap.OpenLive(port, 65635, true, time.Millisecond*10)
-	if e != nil {
-		return &Capture{}, NewError("Could not create pcap handle:", e.Error())
-	}
-
+func NewCapture(port string) *Capture {
 	c := Capture{
-		cfast:    make(chan Buffer, 1000),
-		cslow:    make(chan Buffer, 1),
-		pktCount: pktCount,
-		state:    NotStarted,
+		Packets: make(chan *RawPacket, 1000),
+		state:   NotStarted,
+		port:    port,
 	}
-
-	c.SetState(Started)
-	go c.WriteCapture(f)
-	go c.BufferCapture()
-	go c.Capture(handle)
-
-	return &c, nil
+	return &c
 }
 
-func (c *Capture) WriteCapture(f *os.File) {
+func (c *Capture) Start(handle *pcap.Handle, pktCount uint32, bufferize bool) {
+	c.pktCount = pktCount
+	c.SetState(Started)
+	if bufferize {
+		buf := newRingBug(10000)
+		go c.consumeChunks(buf)
+		go c.captureChunks(buf, handle)
+	} else {
+		go c.capture(handle)
+	}
+}
+
+func (c *Capture) WriteCapture(f *os.File) error {
+	defer f.Close()
 
 	defer func() {
-		f.Close()
 		Info.Println("Finished writing capture file")
-		c.SetState(Done)
 	}()
 
 	w := pcapgo.NewWriter(f)
 	w.WriteFileHeader(65536, layers.LinkTypeEthernet)
-	for {
-		buf, ok := <-c.cslow
-		if !ok {
-			return
-		}
-		for i := 0; i < len(buf); i++ {
-			w.WritePacket(buf[i].ci, buf[i].data)
-		}
+	for pkt := range c.Packets {
+		w.WritePacket(pkt.ci, pkt.data)
 	}
+	return nil
 }
 
-func (c *Capture) BufferCapture() {
-	defer close(c.cslow)
-
+func (c *Capture) capture(handle *pcap.Handle) {
+	defer c.SetState(Done)
+	defer close(c.Packets)
+	defer handle.Close()
 	count := uint32(0)
-	buffers := make([]Buffer, 0, 1000)
 
-main:
+	for {
+		data, ci, e := handle.ReadPacketData()
+		if e == nil {
+			count++
+			select {
+			case c.Packets <- &RawPacket{data: data, ci: ci}:
+			default:
+			}
+		}
+		if !(count < c.pktCount || c.pktCount == 0) || c.ShouldStop() {
+			c.Stop()
+			break
+		}
+	}
+	c.setStats(handle)
+}
+
+func (c *Capture) setStats(handle *pcap.Handle) error {
+	stats, e := handle.Stats()
+	if e != nil {
+		return NewError("Failed to get capture stats:", e.Error())
+	}
+
+	c.mtx.Lock()
+	c.stats = Stats{
+		Received: uint32(stats.PacketsReceived),
+		KDropped: uint32(stats.PacketsDropped),
+		IDropped: uint32(stats.PacketsIfDropped),
+	}
+	c.mtx.Unlock()
+	return nil
+}
+
+// kind of ring buffer implementation
+type ring struct {
+	In       chan Buffer
+	Out      chan Buffer
+	head     int
+	tail     int
+	len      int
+	capacity int
+	buff     []Buffer
+}
+
+func (r *ring) run() {
+	defer close(r.Out)
+loop:
+	// give priority to writes, and only read from the ring buffer if there is
+	// nothing to write
 	for {
 		select {
-		case buf := <-c.cfast:
+		case buf := <-r.In:
 			if buf == nil {
-				break main
+				break loop
 			}
-			count += uint32(len(buf))
-			if count >= c.pktCount && c.pktCount > 0 {
-				Info.Println("received", count, "packets: stopping capture")
-				buffers = append(buffers, buf[:c.pktCount-(count-uint32(len(buf)))])
-				c.SetStop()
-				break main
-			}
-			buffers = append(buffers, buf)
-			if cap(buffers) == 0 {
-				more := make([]Buffer, len(buffers), 2*len(buffers))
-				copy(more, buffers)
-				buffers = more
-			}
+			r.set(buf)
 		default:
-			if len(buffers) > 0 {
-				select {
-				case c.cslow <- buffers[0]:
-					buffers = buffers[1:]
-				case <-time.After(time.Millisecond * 20):
-				}
+			select {
+			case r.Out <- r.get():
+			case <-time.After(10 * time.Millisecond):
 			}
 		}
-
 	}
-
-	Info.Println("waiting for capture file to be written")
-	for i := 0; i < len(buffers); i++ {
-		c.cslow <- buffers[i]
+	for r.head >= r.tail {
+		r.Out <- r.get()
 	}
 }
 
-func (c *Capture) Capture(handle *pcap.Handle) {
-	defer close(c.cfast)
+func (r *ring) set(v Buffer) {
+	r.head = r.head + 1
+	r.buff[r.head%r.len] = v
+	if r.head-r.tail == r.len {
+		r.resize(r.len * 4)
+	}
+}
+
+func (r *ring) get() (v Buffer) {
+	if r.head < r.tail {
+		return nil
+	}
+	v = r.buff[r.tail%r.len]
+	r.tail = r.tail + 1
+	if r.len > r.capacity && r.head-r.tail <= r.len/8 {
+		r.resize(r.len / 2)
+	}
+	return v
+}
+
+func (r *ring) resize(size int) {
+	newb := make([]Buffer, size)
+	for i := range newb {
+		newb[i] = nil
+	}
+	r.buff = append(r.buff, newb...)
+	r.len = size
+	r.head = r.head % r.len
+	r.tail = r.tail % r.len
+}
+
+func newRingBug(capacity int) *ring {
+	r := ring{
+		buff:     make([]Buffer, capacity),
+		capacity: capacity,
+		len:      capacity,
+		head:     -1,
+		tail:     0,
+		In:       make(chan Buffer, 1000),
+		Out:      make(chan Buffer, 1000),
+	}
+	go r.run()
+	return &r
+}
+
+func (c *Capture) consumeChunks(ring *ring) {
+	defer close(c.Packets)
+	defer c.SetState(Done)
+	for buf := range ring.Out {
+		for i := 0; i < len(buf); i++ {
+			c.Packets <- buf[i]
+		}
+	}
+}
+
+func (c *Capture) captureChunks(ring *ring, handle *pcap.Handle) {
+	defer close(ring.In)
 	defer handle.Close()
 
+	count := uint32(0)
+
 main:
-	for {
+	for c.pktCount == 0 || count < c.pktCount {
 		buf := make(Buffer, 1000)
 		last := -1
 		for i := 0; i < 1000; i++ {
@@ -210,7 +270,9 @@ main:
 					}
 					if last >= 0 {
 						select {
-						case c.cfast <- buf[:last+1]:
+						case ring.In <- buf[:last+1]:
+							count += uint32(last + 1)
+							continue main
 						default:
 						}
 					}
@@ -219,25 +281,14 @@ main:
 		}
 
 		select {
-		case c.cfast <- buf[:last+1]:
+		case ring.In <- buf[:last+1]:
 			if c.ShouldStop() {
 				break main
 			}
 		default:
+			Error.Println("could not push buffer into ring... lost a buffer")
 		}
+		count += uint32(last + 1)
 	}
-
-	stats, e := handle.Stats()
-	if e != nil {
-		Error.Println("Failed to get capture stats:", e.Error())
-		return
-	}
-
-	c.mtx.Lock()
-	c.stats = Stats{
-		Received: uint32(stats.PacketsReceived),
-		KDropped: uint32(stats.PacketsDropped),
-		IDropped: uint32(stats.PacketsIfDropped),
-	}
-	c.mtx.Unlock()
+	c.setStats(handle)
 }

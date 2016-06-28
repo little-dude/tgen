@@ -4,6 +4,7 @@ import (
 	// "github.com/google/gopacket/pfring" FIXME: pf_ring does seem to work :(
 	"github.com/google/gopacket/pcap"
 	"github.com/little-dude/tgen/schemas"
+	"os"
 	"strconv"
 	"time"
 )
@@ -17,8 +18,8 @@ type Port struct {
 	sendDone   chan empty
 	sendStop   chan empty
 	sendError  chan error
-
-	capture *Capture
+	capture    *Capture
+	interfaces []*Interface
 }
 
 func NewPort(name string, controller *Controller) *Port {
@@ -88,24 +89,19 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 	}
 
 	streams := make([]*Stream, 0)
-	var streamFound bool
 	var ID uint16
+outer:
 	for i := 0; i < streamIDs.Len(); i++ {
 		ID = streamIDs.At(i)
-		streamFound = false
 		for _, stream := range p.controller.streams {
 			if stream.ID == ID {
 				streams = append(streams, stream)
-				streamFound = true
-				break
+				continue outer
 			}
 		}
-		if streamFound == false {
-			return NewError("No stream found with ID", strconv.Itoa(int(ID)))
-		}
+		return NewError("No stream found with ID", strconv.Itoa(int(ID)))
 	}
 
-	Trace.Println("Creating pcap handle on", p)
 	handle, e := pcap.OpenLive(p.name, 9999, true, -time.Millisecond*10)
 	if e != nil {
 		Error.Println("Failed to create the pcap handle:", e.Error())
@@ -153,7 +149,7 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 
 func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
 	timeout := call.Params.Timeout()
-	p.capture.Wait(timeout)
+	p.capture.Join(timeout)
 
 	if p.capture.State() == Done {
 		call.Results.SetDone(true)
@@ -170,8 +166,8 @@ func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
 
 func (p *Port) StopCapture(call schemas.Port_stopCapture) error {
 	if p.capture.State() == Started {
-		p.capture.SetStop()
-		p.capture.Wait(0)
+		p.capture.Stop()
+		p.capture.Join(0)
 		return nil
 	} else {
 		return NewError(p.name, "is not capturing")
@@ -182,16 +178,27 @@ func (p *Port) StartCapture(call schemas.Port_startCapture) error {
 	if p.capture.State() == Started {
 		return NewError(p.name, " is already capturing")
 	}
-	packetCount := call.Params.PacketCount()
-	path, e := call.Params.FilePath()
+	pktCount := call.Params.PacketCount()
+
+	path, e := call.Params.File()
 	if e != nil {
 		return NewError(e.Error())
 	}
 
-	p.capture, e = NewCapture(path, p.name, packetCount)
+	f, e := os.Create(path)
 	if e != nil {
-		return NewError("failed to start capture:", e.Error())
+		return NewError("Could create capture file:", e.Error())
 	}
-	Info.Println("starting capture on", p.name)
+
+	handle, e := pcap.OpenLive(p.name, 65635, true, time.Millisecond*10)
+	if e != nil {
+		return NewError("Could not create pcap handle:", e.Error())
+	}
+
+	p.capture = NewCapture(p.name)
+	go p.capture.WriteCapture(f)
+	p.capture.Start(handle, pktCount, true)
+
+	Info.Println("capture started on", p.name)
 	return nil
 }
