@@ -18,7 +18,7 @@ class Port(object):
 
     def wait_send(self, timeout=0):
         res = self._capnp_port.waitSend(timeout).wait()
-        return (res.done, res.error)
+        return res.done
 
     def start_capture(self, file_path, packet_count=0):
         self._capnp_port.startCapture(file_path, packet_count).wait()
