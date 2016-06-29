@@ -6,18 +6,20 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/pcapgo"
 	"os"
-	"sync"
 	"time"
 )
 
-type Capture struct {
-	state    IOState
-	stop     bool
-	stats    Stats
-	mtx      sync.RWMutex
+type PcapStats struct {
+	Received uint32
+	KDropped uint32
+	IDropped uint32
+}
+
+type Rx struct {
+	state    *RxTxState
+	stats    PcapStats
 	Packets  chan *RawPacket
 	pktCount uint32
-	port     string
 }
 
 type RawPacket struct {
@@ -27,54 +29,29 @@ type RawPacket struct {
 
 type Buffer []*RawPacket
 
-func (c *Capture) Stop() {
-	c.mtx.Lock()
-	c.stop = true
-	c.mtx.Unlock()
-}
-
-func (c *Capture) ShouldStop() bool {
-	c.mtx.RLock()
-	defer c.mtx.RUnlock()
-	return c.stop
-}
-
-func (c *Capture) State() IOState {
-	c.mtx.RLock()
-	defer c.mtx.RUnlock()
-	return c.state
-}
-
-func (c *Capture) SetState(newState IOState) {
-	defer c.mtx.Unlock()
-	c.mtx.Lock()
-	c.state = newState
-}
-
-func (c *Capture) Stats() (Stats, error) {
-	state := c.State()
-	if state == Done {
-		c.mtx.RLock()
-		defer c.mtx.RUnlock()
-		return c.stats, nil
+func (rx *Rx) Stats() (PcapStats, error) {
+	if rx.state.Done() {
+		// no need to lock to access the stats here since when capture is done,
+		// no goroutine should access the stats anymore
+		return rx.stats, nil
 	}
-	if state == NotStarted {
-		return Stats{}, NewError("no capture occured")
+	if rx.state.Inactive() {
+		return PcapStats{}, NewError("capture did not start yet")
 	}
-	if state == Started {
-		return Stats{}, NewError("still capturing")
+	if rx.state.Active() {
+		return PcapStats{}, NewError("still capturing")
 	}
 	panic("Unknown state")
 }
 
-func (c *Capture) Join(timeout uint32) error {
-	if c.State() == NotStarted {
+func (rx *Rx) Join(timeout uint32) error {
+	if rx.state.Inactive() {
 		return NewError("no capture to wait for")
 	}
 	start := time.Now()
 	t := time.Millisecond * time.Duration(timeout)
 	for time.Now().Sub(start) < t || timeout == 0 {
-		if c.State() == Done {
+		if rx.state.Done() {
 			return nil
 		}
 		time.Sleep(time.Millisecond * 50)
@@ -82,28 +59,27 @@ func (c *Capture) Join(timeout uint32) error {
 	return NewError("capture did not finish")
 }
 
-func NewCapture(port string) *Capture {
-	c := Capture{
+func NewRx() *Rx {
+	c := Rx{
 		Packets: make(chan *RawPacket, 1000),
-		state:   NotStarted,
-		port:    port,
+		state:   NewRxTxState(),
 	}
 	return &c
 }
 
-func (c *Capture) Start(handle *pcap.Handle, pktCount uint32, bufferize bool) {
-	c.pktCount = pktCount
-	c.SetState(Started)
+func (rx *Rx) Start(handle *pcap.Handle, pktCount uint32, bufferize bool) {
+	rx.pktCount = pktCount
+	rx.state.SetRun()
 	if bufferize {
 		buf := newRingBug(10000)
-		go c.consumeChunks(buf)
-		go c.captureChunks(buf, handle)
+		go rx.consumeChunks(buf)
+		go rx.captureChunks(buf, handle)
 	} else {
-		go c.capture(handle)
+		go rx.capture(handle)
 	}
 }
 
-func (c *Capture) WriteCapture(f *os.File) error {
+func (rx *Rx) Save(f *os.File) error {
 	defer f.Close()
 
 	defer func() {
@@ -112,15 +88,15 @@ func (c *Capture) WriteCapture(f *os.File) error {
 
 	w := pcapgo.NewWriter(f)
 	w.WriteFileHeader(65536, layers.LinkTypeEthernet)
-	for pkt := range c.Packets {
+	for pkt := range rx.Packets {
 		w.WritePacket(pkt.ci, pkt.data)
 	}
 	return nil
 }
 
-func (c *Capture) capture(handle *pcap.Handle) {
-	defer c.SetState(Done)
-	defer close(c.Packets)
+func (rx *Rx) capture(handle *pcap.Handle) {
+	defer rx.state.SetDone()
+	defer close(rx.Packets)
 	defer handle.Close()
 	count := uint32(0)
 
@@ -129,31 +105,31 @@ func (c *Capture) capture(handle *pcap.Handle) {
 		if e == nil {
 			count++
 			select {
-			case c.Packets <- &RawPacket{data: data, ci: ci}:
+			case rx.Packets <- &RawPacket{data: data, ci: ci}:
 			default:
 			}
 		}
-		if !(count < c.pktCount || c.pktCount == 0) || c.ShouldStop() {
-			c.Stop()
+		if !(count < rx.pktCount || rx.pktCount == 0) || rx.state.Stopping() {
 			break
 		}
 	}
-	c.setStats(handle)
+	rx.setStats(handle)
 }
 
-func (c *Capture) setStats(handle *pcap.Handle) error {
+func (rx *Rx) setStats(handle *pcap.Handle) error {
 	stats, e := handle.Stats()
 	if e != nil {
 		return NewError("Failed to get capture stats:", e.Error())
 	}
 
-	c.mtx.Lock()
-	c.stats = Stats{
+	// no need to lock here, since the main goroutine only reads the stats when
+	// the state of the capture is "Done", which occurs when this goroutine
+	// exits
+	rx.stats = PcapStats{
 		Received: uint32(stats.PacketsReceived),
 		KDropped: uint32(stats.PacketsDropped),
 		IDropped: uint32(stats.PacketsIfDropped),
 	}
-	c.mtx.Unlock()
 	return nil
 }
 
@@ -237,24 +213,24 @@ func newRingBug(capacity int) *ring {
 	return &r
 }
 
-func (c *Capture) consumeChunks(ring *ring) {
-	defer close(c.Packets)
-	defer c.SetState(Done)
+func (rx *Rx) consumeChunks(ring *ring) {
+	defer close(rx.Packets)
+	defer rx.state.SetDone()
 	for buf := range ring.Out {
 		for i := 0; i < len(buf); i++ {
-			c.Packets <- buf[i]
+			rx.Packets <- buf[i]
 		}
 	}
 }
 
-func (c *Capture) captureChunks(ring *ring, handle *pcap.Handle) {
+func (rx *Rx) captureChunks(ring *ring, handle *pcap.Handle) {
 	defer close(ring.In)
 	defer handle.Close()
 
 	count := uint32(0)
 
 main:
-	for c.pktCount == 0 || count < c.pktCount {
+	for rx.pktCount == 0 || count < rx.pktCount {
 		buf := make(Buffer, 1000)
 		last := -1
 		for i := 0; i < 1000; i++ {
@@ -265,7 +241,7 @@ main:
 					last = i
 					break
 				} else if e == pcap.NextErrorTimeoutExpired {
-					if c.ShouldStop() {
+					if rx.state.Stopping() {
 						break main
 					}
 					if last >= 0 {
@@ -282,7 +258,7 @@ main:
 
 		select {
 		case ring.In <- buf[:last+1]:
-			if c.ShouldStop() {
+			if rx.state.Stopping() {
 				break main
 			}
 		default:
@@ -290,5 +266,5 @@ main:
 		}
 		count += uint32(last + 1)
 	}
-	c.setStats(handle)
+	rx.setStats(handle)
 }

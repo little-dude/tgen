@@ -18,23 +18,19 @@ type Port struct {
 	sendDone   chan empty
 	sendStop   chan empty
 	sendError  chan error
-	capture    *Capture
+	rx         *Rx
 	interfaces []*Interface
 }
 
 func NewPort(name string, controller *Controller) *Port {
-	capture := &Capture{}
-	capture.SetState(NotStarted)
 	return &Port{
 		name:       name,
 		controller: controller,
-
-		isSending: false,
-		sendDone:  make(chan empty, 1),
-		sendStop:  make(chan empty, 1),
-		sendError: make(chan error, 1),
-
-		capture: capture,
+		isSending:  false,
+		sendDone:   make(chan empty, 1),
+		sendStop:   make(chan empty, 1),
+		sendError:  make(chan error, 1),
+		rx:         NewRx(),
 	}
 }
 
@@ -149,15 +145,15 @@ outer:
 
 func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
 	timeout := call.Params.Timeout()
-	p.capture.Join(timeout)
+	p.rx.Join(timeout)
 
-	if p.capture.State() == Done {
+	if p.rx.state.Done() {
 		call.Results.SetDone(true)
 	} else {
 		call.Results.SetDone(false)
 	}
 
-	stats, _ := p.capture.Stats()
+	stats, _ := p.rx.Stats()
 	call.Results.SetReceived(stats.Received)
 	call.Results.SetDropped(stats.KDropped)
 
@@ -165,9 +161,9 @@ func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
 }
 
 func (p *Port) StopCapture(call schemas.Port_stopCapture) error {
-	if p.capture.State() == Started {
-		p.capture.Stop()
-		p.capture.Join(0)
+	if p.rx.state.Active() {
+		p.rx.state.SetStop()
+		p.rx.Join(0)
 		return nil
 	} else {
 		return NewError(p.name, "is not capturing")
@@ -175,7 +171,7 @@ func (p *Port) StopCapture(call schemas.Port_stopCapture) error {
 }
 
 func (p *Port) StartCapture(call schemas.Port_startCapture) error {
-	if p.capture.State() == Started {
+	if p.rx.state.Active() {
 		return NewError(p.name, " is already capturing")
 	}
 	pktCount := call.Params.PacketCount()
@@ -195,9 +191,9 @@ func (p *Port) StartCapture(call schemas.Port_startCapture) error {
 		return NewError("Could not create pcap handle:", e.Error())
 	}
 
-	p.capture = NewCapture(p.name)
-	go p.capture.WriteCapture(f)
-	p.capture.Start(handle, pktCount, true)
+	p.rx = NewRx()
+	go p.rx.Save(f)
+	p.rx.Start(handle, pktCount, true)
 
 	Info.Println("capture started on", p.name)
 	return nil

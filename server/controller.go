@@ -72,7 +72,8 @@ outer:
 				continue outer
 			}
 		}
-		if c.ports[portName].isSending || c.ports[portName].capture.State() == Started {
+		port := c.ports[portName]
+		if port.isSending || port.rx.state.Active() {
 			Error.Println("Port", portName, "not found but sending and/or capturing. Not removing it for now.")
 		} else {
 			garbagePorts = append(garbagePorts, portName)
