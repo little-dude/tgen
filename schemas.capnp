@@ -12,7 +12,7 @@ interface Port {
     getConfig    @0 ()                                   -> (config :Config);
     setConfig    @1 (config :Config)                     -> ();
     startSend    @2 (ids :List(UInt16))                  -> ();
-    waitSend     @3 (timeout :UInt32)                    -> (done :Bool, error :Text);
+    waitSend     @3 (timeout :UInt32)                    -> (done :Bool);
     # stopSend    @6  () -> ();
     startCapture @4 (file:Text, packetCount :UInt32)     -> ();
     waitCapture  @5 (timeout :UInt32)                    -> (done :Bool, received :UInt32, dropped :UInt32);
