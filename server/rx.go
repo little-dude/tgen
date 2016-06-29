@@ -44,21 +44,6 @@ func (rx *Rx) Stats() (PcapStats, error) {
 	panic("Unknown state")
 }
 
-func (rx *Rx) Join(timeout uint32) error {
-	if rx.state.Inactive() {
-		return NewError("no capture to wait for")
-	}
-	start := time.Now()
-	t := time.Millisecond * time.Duration(timeout)
-	for time.Now().Sub(start) < t || timeout == 0 {
-		if rx.state.Done() {
-			return nil
-		}
-		time.Sleep(time.Millisecond * 50)
-	}
-	return NewError("capture did not finish")
-}
-
 func NewRx() *Rx {
 	c := Rx{
 		Packets: make(chan *RawPacket, 1000),

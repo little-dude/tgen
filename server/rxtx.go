@@ -1,6 +1,9 @@
 package server
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 const (
 	inactive = iota
@@ -72,4 +75,19 @@ func NewRxTxState() *RxTxState {
 	s := RxTxState{}
 	s.SetInactive()
 	return &s
+}
+
+func (s *RxTxState) WaitDone(timeout uint32) error {
+	if s.Inactive() {
+		return NewError("receiver/transmitter is inactive: nothing to wait for")
+	}
+	start := time.Now()
+	t := time.Millisecond * time.Duration(timeout)
+	for time.Now().Sub(start) < t || timeout == 0 {
+		if s.Done() {
+			return nil
+		}
+		time.Sleep(time.Millisecond * 50)
+	}
+	return NewError("receiver/transmitter did not finish")
 }
