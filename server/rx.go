@@ -56,7 +56,7 @@ func (rx *Rx) Start(handle *pcap.Handle, pktCount uint32, bufferize bool) {
 	rx.pktCount = pktCount
 	rx.state.SetRun()
 	if bufferize {
-		buf := newRingBug(10000)
+		buf := newRingBuf(10000)
 		go rx.consumeChunks(buf)
 		go rx.captureChunks(buf, handle)
 	} else {
@@ -89,10 +89,8 @@ func (rx *Rx) capture(handle *pcap.Handle) {
 		data, ci, e := handle.ReadPacketData()
 		if e == nil {
 			count++
-			select {
-			case rx.Packets <- &RawPacket{data: data, ci: ci}:
-			default:
-			}
+			// WARNING: this can block forever is nothing is consuming the incoming packets
+			rx.Packets <- &RawPacket{data: data, ci: ci}
 		}
 		if !(count < rx.pktCount || rx.pktCount == 0) || rx.state.Stopping() {
 			break
@@ -132,9 +130,9 @@ type ring struct {
 func (r *ring) run() {
 	defer close(r.Out)
 loop:
-	// give priority to writes, and only read from the ring buffer if there is
-	// nothing to write
 	for {
+		// give priority to writes, and only read from the ring buffer if there
+		// is nothing to write
 		select {
 		case buf := <-r.In:
 			if buf == nil {
@@ -143,7 +141,8 @@ loop:
 			r.set(buf)
 		default:
 			select {
-			case r.Out <- r.get():
+			case r.Out <- r.peek():
+				r.get()
 			case <-time.After(10 * time.Millisecond):
 			}
 		}
@@ -151,6 +150,13 @@ loop:
 	for r.head >= r.tail {
 		r.Out <- r.get()
 	}
+}
+
+func (r *ring) peek() (v Buffer) {
+	if r.head < r.tail {
+		return nil
+	}
+	return r.buff[r.tail%r.len]
 }
 
 func (r *ring) set(v Buffer) {
@@ -184,7 +190,7 @@ func (r *ring) resize(size int) {
 	r.tail = r.tail % r.len
 }
 
-func newRingBug(capacity int) *ring {
+func newRingBuf(capacity int) *ring {
 	r := ring{
 		buff:     make([]Buffer, capacity),
 		capacity: capacity,
@@ -230,25 +236,21 @@ main:
 						break main
 					}
 					if last >= 0 {
-						select {
-						case ring.In <- buf[:last+1]:
-							count += uint32(last + 1)
-							continue main
-						default:
-						}
+						// this should not block too long, since the ring
+						// buffer prioritizes producer over consumer
+						ring.In <- buf[:last+1]
+						count += uint32(last + 1)
+						continue main
 					}
 				}
 			}
 		}
-
-		select {
-		case ring.In <- buf[:last+1]:
-			if rx.state.Stopping() {
-				break main
-			}
-		default:
-			Error.Println("could not push buffer into ring... lost a buffer")
+		if rx.state.Stopping() {
+			break main
 		}
+		// this should not block too long, since the ring buffer prioritizes
+		// producer over consumer
+		ring.In <- buf[:last+1]
 		count += uint32(last + 1)
 	}
 	rx.setStats(handle)
