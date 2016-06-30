@@ -77,10 +77,6 @@ def is_pypy():
     return False
 
 
-def send_and_receive(tx, rx, duration=1, clear_stats=True, save_as=None):
-    raise NotImplemented()
-
-
 TGEN_ERR_Q = None
 TGEN_OUT_Q = None
 TGEN = None
@@ -199,6 +195,14 @@ class Capture(object):
 
     def __exit__(self, type, value, traceback):
         pass
+
+
+def send_and_receive(tx, rx, stream_ids, packet_count, timeout):
+    with Capture(rx, count=packet_count) as capture:
+        tx.start_send(stream_ids)
+        tx.wait_send()
+        packets, stats = capture.get_packets(timeout=timeout)
+    return packets, stats
 
 
 def cleanup():

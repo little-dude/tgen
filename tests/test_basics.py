@@ -4,12 +4,11 @@ from __future__ import unicode_literals
 import pytest
 import tgenpy
 from tgenpy import protocols
-import logging
-from . import utils
+from .utils import send_and_receive
 import netaddr
 
-# logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.mark.usefixtures('start_tgen')
@@ -183,15 +182,35 @@ def test_ethernet2(controller):
 
     tx = controller.get_port('testveth0')
     rx = controller.get_port('testveth1')
-    with utils.Capture(rx, count=256) as capture:
-        tx.start_send([stream.id])
-        packets = capture.get_packets(timeout=5000)
+    packets, stats = send_and_receive(tx, rx, [stream.id], stream.count, 1000)
 
     for idx, packet in enumerate(packets):
         ethernet = packet.eth
-        assert netaddr.EUI(ethernet.src).value == idx
-        assert netaddr.EUI(ethernet.dst).value == 0xffffffffffff - (idx << (5*8))
-        assert int(ethernet.type, 16) == 0x800
+        if netaddr.EUI(ethernet.src).value != idx:
+            assert netaddr.EUI(ethernet.dst).value == 0xffffffffffff - (idx << (5*8))
+            assert int(ethernet.type, 16) == 0x800
+
+@pytest.mark.usefixtures('create_ports')
+def test_10M_packets(controller):
+    eth = protocols.Ethernet2()
+    ip = protocols.IPv4()
+    stream = tgenpy.Stream(layers=[eth, ip])
+    stream.count = 10000000
+    controller.save_stream(stream)
+    tx = controller.get_port('testveth0')
+    rx = controller.get_port('testveth1')
+    # rx.start_capture('10M.pcap', packet_count=stream.count)
+    rx.start_capture('/dev/null', packet_count=stream.count)
+    tx.start_send([stream.id])
+    tx.wait_send()
+    done, _, dropped = rx.wait_capture(timeout=30000)
+    if done is False:
+        rx.stop_capture()
+        _, _, dropped = rx.wait_capture()
+    # We consider 1% loss acceptable for now. Weirdly, we're getting more loss
+    # when writing in /dev/null than when writing on my ssd (~twice to three
+    # times more loss)
+    assert dropped < stream.count*0.01
 
 
 @pytest.mark.usefixtures('create_ports')
@@ -200,4 +219,3 @@ def test_capture_blocking(controller):
     for i in range(0, 10):
         port.start_capture("test.pcap")
         port.stop_capture()
-        port.wait_capture()
