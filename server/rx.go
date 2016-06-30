@@ -6,7 +6,6 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/pcapgo"
 	"os"
-	"time"
 )
 
 type PcapStats struct {
@@ -117,6 +116,7 @@ func (rx *Rx) setStats(handle *pcap.Handle) error {
 }
 
 // kind of ring buffer implementation
+// inspired by https://github.com/zfjagann/golang-ring/blob/master/ring.go
 type ring struct {
 	In       chan Buffer
 	Out      chan Buffer
@@ -134,16 +134,25 @@ loop:
 		// give priority to writes, and only read from the ring buffer if there
 		// is nothing to write
 		select {
-		case buf := <-r.In:
-			if buf == nil {
+		case buf := <-r.In: // data incoming: add it to the buffer and continue
+			if buf == nil { // r.In is closed, exit
 				break loop
 			}
 			r.set(buf)
-		default:
-			select {
-			case r.Out <- r.peek():
-				r.get()
-			case <-time.After(10 * time.Millisecond):
+		default: // no data incoming, let see if there is something to read and if someone wants to read it
+			if r.tail < r.head { // there is something to read
+				select {
+				case r.Out <- r.peek(): // a goroutine is reading from r.Out
+					r.get()
+				default: // nobody is reading from r.Out, do nothing and continue
+				}
+			} else { // nothing to read, the buffer is empty
+				// wait for data to come, so that we do not consume CPU
+				buf := <-r.In
+				if buf == nil { // r.In is closed, exit
+					break loop
+				}
+				r.set(buf)
 			}
 		}
 	}
@@ -153,41 +162,43 @@ loop:
 }
 
 func (r *ring) peek() (v Buffer) {
-	if r.head < r.tail {
-		return nil
-	}
 	return r.buff[r.tail%r.len]
 }
 
 func (r *ring) set(v Buffer) {
-	r.head = r.head + 1
-	r.buff[r.head%r.len] = v
-	if r.head-r.tail == r.len {
+	if r.head-r.tail == r.len-1 {
 		r.resize(r.len * 4)
 	}
+	r.head = r.head + 1
+	r.buff[r.head%r.len] = v
 }
 
 func (r *ring) get() (v Buffer) {
-	if r.head < r.tail {
-		return nil
-	}
 	v = r.buff[r.tail%r.len]
 	r.tail = r.tail + 1
-	if r.len > r.capacity && r.head-r.tail <= r.len/8 {
-		r.resize(r.len / 2)
+	// shrinking is expensive for big buffers, we don't do it too often
+	if r.len > r.capacity && r.head-r.tail <= r.len/10 {
+		r.resize(r.len / 5)
 	}
 	return v
 }
 
 func (r *ring) resize(size int) {
-	newb := make([]Buffer, size)
-	for i := range newb {
-		newb[i] = nil
+	newbuf := make([]Buffer, size)
+	t := r.tail % r.len
+	h := r.head % r.len
+	// note: extend is normally called before t == h
+	if t >= h {
+		copy(newbuf, r.buff[t:])
+		copy(newbuf[r.len-t:], r.buff[:h+1])
+		r.head = r.len - t + h
+	} else {
+		copy(newbuf, r.buff[t:h+1])
+		r.head = h - t
 	}
-	r.buff = append(r.buff, newb...)
+	r.buff = newbuf
 	r.len = size
-	r.head = r.head % r.len
-	r.tail = r.tail % r.len
+	r.tail = 0
 }
 
 func newRingBuf(capacity int) *ring {
@@ -197,8 +208,8 @@ func newRingBuf(capacity int) *ring {
 		len:      capacity,
 		head:     -1,
 		tail:     0,
-		In:       make(chan Buffer, 1000),
-		Out:      make(chan Buffer, 1000),
+		In:       make(chan Buffer, capacity/10),
+		Out:      make(chan Buffer, capacity/10),
 	}
 	go r.run()
 	return &r
