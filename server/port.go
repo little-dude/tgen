@@ -2,7 +2,9 @@ package server
 
 import (
 	// "github.com/google/gopacket/pfring" FIXME: pf_ring does seem to work :(
+	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 	"github.com/little-dude/tgen/schemas"
 	"os"
 	"strconv"
@@ -16,15 +18,15 @@ type Port struct {
 	controller *Controller
 	rx         *Rx
 	tx         *Tx
-	interfaces []*Interface
+	// lans       []*LAN
 }
 
 func NewPort(name string, controller *Controller) *Port {
 	return &Port{
 		name:       name,
 		controller: controller,
+		rx:         NewRx(name, pcap.DirectionInOut, true),
 		tx:         NewTx(),
-		rx:         NewRx(),
 	}
 }
 
@@ -119,19 +121,33 @@ func (p *Port) StartCapture(call schemas.Port_startCapture) error {
 		return NewError(e.Error())
 	}
 
+	p.rx = NewRx(p.name, pcap.DirectionInOut, true)
+
 	f, e := os.Create(path)
 	if e != nil {
 		return NewError("Could create capture file:", e.Error())
 	}
 
-	handle, e := pcap.OpenLive(p.name, 65635, true, time.Millisecond*10)
-	if e != nil {
-		return NewError("Could not create pcap handle:", e.Error())
-	}
+	go func(f *os.File, packets <-chan *RawPacket) {
+		defer f.Close()
+		defer func() { Info.Println("Finished writing capture file") }()
+		w := pcapgo.NewWriter(f)
+		w.WriteFileHeader(65536, layers.LinkTypeEthernet)
+		for pkt := range packets {
+			w.WritePacket(pkt.ci, pkt.data)
+		}
+	}(f, p.rx.Packets)
 
-	p.rx = NewRx()
-	go p.rx.Save(f)
-	p.rx.Start(handle, pktCount, true)
+	e = p.rx.Start(pktCount)
+	if e != nil {
+		// at this point, the goroutine started by rx.Save() is reading on
+		// p.rx.Packets to force it to stop, we close the channel
+
+		// FIXME: maybe the "Save()" function should not be a method of `Rx`,
+		// it would make it clearer to have a consumer of p.rx.Packets.
+		close(p.rx.Packets)
+		return NewError("Failed to start capture:", e.Error())
+	}
 
 	Info.Println("capture started on", p.name)
 	return nil

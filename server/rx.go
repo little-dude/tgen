@@ -2,10 +2,8 @@ package server
 
 import (
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
-	"github.com/google/gopacket/pcapgo"
-	"os"
+	"time"
 )
 
 type PcapStats struct {
@@ -15,10 +13,13 @@ type PcapStats struct {
 }
 
 type Rx struct {
-	state    *RxTxState
-	stats    PcapStats
-	Packets  chan *RawPacket
-	pktCount uint32
+	state     *RxTxState
+	stats     PcapStats
+	buffered  bool
+	port      string
+	direction pcap.Direction
+	Packets   chan *RawPacket
+	pktCount  uint32
 }
 
 type RawPacket struct {
@@ -43,37 +44,36 @@ func (rx *Rx) Stats() (PcapStats, error) {
 	panic("Unknown state")
 }
 
-func NewRx() *Rx {
+func NewRx(port string, direction pcap.Direction, buffered bool) *Rx {
 	c := Rx{
-		Packets: make(chan *RawPacket, 1000),
-		state:   NewRxTxState(),
+		Packets:   make(chan *RawPacket, 1000),
+		state:     NewRxTxState(),
+		buffered:  buffered,
+		direction: direction,
+		port:      port,
 	}
 	return &c
 }
 
-func (rx *Rx) Start(handle *pcap.Handle, pktCount uint32, bufferize bool) {
+func (rx *Rx) Start(pktCount uint32) error {
+	handle, e := pcap.OpenLive(rx.port, 65635, rx.buffered, time.Millisecond*10)
+	if e != nil {
+		return NewError("Could not create pcap handle:", e.Error())
+	}
+
+	e = handle.SetDirection(rx.direction)
+	if e != nil {
+		return NewError("Could not set pcap handle direction:", e.Error())
+	}
+
 	rx.pktCount = pktCount
 	rx.state.SetRun()
-	if bufferize {
+	if rx.buffered {
 		buf := newRingBuf(10000)
 		go rx.consumeChunks(buf)
 		go rx.captureChunks(buf, handle)
 	} else {
 		go rx.capture(handle)
-	}
-}
-
-func (rx *Rx) Save(f *os.File) error {
-	defer f.Close()
-
-	defer func() {
-		Info.Println("Finished writing capture file")
-	}()
-
-	w := pcapgo.NewWriter(f)
-	w.WriteFileHeader(65536, layers.LinkTypeEthernet)
-	for pkt := range rx.Packets {
-		w.WritePacket(pkt.ci, pkt.data)
 	}
 	return nil
 }
@@ -265,4 +265,12 @@ main:
 		count += uint32(last + 1)
 	}
 	rx.setStats(handle)
+}
+
+func (rx *Rx) Close() {
+	if rx.state.Active() {
+		rx.state.SetStop()
+	}
+	rx.state.WaitDone(0)
+	close(rx.Packets)
 }
