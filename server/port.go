@@ -8,25 +8,29 @@ import (
 	"github.com/little-dude/tgen/schemas"
 	"os"
 	"strconv"
+	"sync"
 	"time"
+	capnp "zombiezen.com/go/capnproto2"
 )
 
 type empty struct{}
 
 type Port struct {
-	name       string
-	controller *Controller
-	rx         *Rx
-	tx         *Tx
-	// lans       []*LAN
+	name          string
+	controller    *Controller
+	rx            *Rx
+	tx            *Tx
+	lans          []*LAN
+	capturingLock sync.RWMutex
+	capturing     bool
 }
 
 func NewPort(name string, controller *Controller) *Port {
 	return &Port{
 		name:       name,
 		controller: controller,
-		rx:         NewRx(name, pcap.DirectionInOut, true),
-		tx:         NewTx(),
+		rx:         NewRx(name),
+		tx:         NewTx(name),
 	}
 }
 
@@ -56,6 +60,9 @@ func (p *Port) WaitSend(call schemas.Port_waitSend) error {
 
 func (p *Port) StartSend(call schemas.Port_startSend) error {
 	streamIDs, e := call.Params.Ids()
+	if e != nil {
+		return NewError(e.Error())
+	}
 	if streamIDs.Len() == 0 {
 		return NewError("No stream ID given")
 	}
@@ -73,38 +80,54 @@ func (p *Port) StartSend(call schemas.Port_startSend) error {
 		return NewError("already transmitting")
 	}
 
-	p.tx = NewTx()
-
-	handle, e := pcap.OpenLive(p.name, 65635, true, time.Millisecond*10)
-	if e != nil {
-		Error.Println("Failed to create the pcap handle:", e.Error())
-		return NewError("Failed to create the pcap handle: ", e.Error())
-	}
-	p.tx.state.SetRun()
-	go p.tx.Start(handle, streams)
+	p.tx = NewTx(p.name)
+	p.tx.SendStreams(streams)
 	return nil
 }
 
-func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
-	timeout := call.Params.Timeout()
+func (p *Port) isCapturing() bool {
+	p.capturingLock.RLock()
+	defer p.capturingLock.RUnlock()
+	return p.capturing
+}
+
+func (p *Port) waitCapture(timeout uint32) bool {
+	start := time.Now()
 	e := p.rx.state.WaitDone(timeout)
-	if e == nil {
+	if e != nil {
+		return false
+	} else {
+		t := time.Millisecond * time.Duration(timeout)
+		for time.Now().Sub(start) < t || timeout == 0 {
+			if !p.isCapturing() {
+				return true
+			} else {
+				time.Sleep(time.Millisecond * 50)
+			}
+		}
+		return false
+	}
+}
+
+func (p *Port) WaitCapture(call schemas.Port_waitCapture) error {
+	if p.waitCapture(call.Params.Timeout()) {
 		call.Results.SetDone(true)
+		stats, _ := p.rx.Stats()
+		call.Results.SetReceived(stats.Received)
+		call.Results.SetDropped(stats.KDropped)
 	} else {
 		call.Results.SetDone(false)
 	}
-
-	stats, _ := p.rx.Stats()
-	call.Results.SetReceived(stats.Received)
-	call.Results.SetDropped(stats.KDropped)
-
 	return nil
 }
 
 func (p *Port) StopCapture(call schemas.Port_stopCapture) error {
-	if p.rx.state.Active() {
-		p.rx.state.SetStop()
-		return p.rx.state.WaitDone(0)
+	if p.isCapturing() {
+		if p.rx.state.Active() {
+			p.rx.state.SetStop()
+		}
+		p.waitCapture(0)
+		return nil
 	} else {
 		return NewError(p.name, "is not capturing")
 	}
@@ -121,34 +144,80 @@ func (p *Port) StartCapture(call schemas.Port_startCapture) error {
 		return NewError(e.Error())
 	}
 
-	p.rx = NewRx(p.name, pcap.DirectionInOut, true)
+	p.rx = NewRx(p.name)
 
 	f, e := os.Create(path)
 	if e != nil {
 		return NewError("Could create capture file:", e.Error())
 	}
 
-	go func(f *os.File, packets <-chan *RawPacket) {
-		defer f.Close()
-		defer func() { Info.Println("Finished writing capture file") }()
+	p.capturingLock.Lock()
+	p.capturing = true
+	p.capturingLock.Unlock()
+
+	captureBuf := NewRingBuf(1000)
+
+	go func(f *os.File, chunks <-chan []*RawPacket) {
+		defer func() {
+			f.Close()
+			Info.Println("Finished writing capture file")
+			p.capturingLock.Lock()
+			p.capturing = false
+			p.capturingLock.Unlock()
+		}()
 		w := pcapgo.NewWriter(f)
 		w.WriteFileHeader(65536, layers.LinkTypeEthernet)
-		for pkt := range packets {
-			w.WritePacket(pkt.ci, pkt.data)
+		for chunk := range chunks {
+			for i := 0; i < len(chunk); i++ {
+				w.WritePacket(chunk[i].ci, chunk[i].data)
+			}
 		}
-	}(f, p.rx.Packets)
+	}(f, captureBuf.Out)
 
-	e = p.rx.Start(pktCount)
+	e = p.rx.CaptureChunks(captureBuf.In, pktCount, pcap.DirectionInOut, "")
 	if e != nil {
-		// at this point, the goroutine started by rx.Save() is reading on
-		// p.rx.Packets to force it to stop, we close the channel
-
-		// FIXME: maybe the "Save()" function should not be a method of `Rx`,
-		// it would make it clearer to have a consumer of p.rx.Packets.
-		close(p.rx.Packets)
+		captureBuf.Close()
 		return NewError("Failed to start capture:", e.Error())
 	}
 
 	Info.Println("capture started on", p.name)
 	return nil
+}
+
+func (p *Port) AddLan(call schemas.Port_addLan) error {
+	cidr, e := call.Params.Cidr()
+	if e != nil {
+		return e
+	}
+	lan, e := NewLAN(p.name, cidr, []uint32{})
+	if e != nil {
+		return e
+	}
+	p.lans = append(p.lans, lan)
+	return call.Results.SetLan(schemas.Lan_ServerToClient(lan))
+}
+
+func (p *Port) GetLans(call schemas.Port_getLans) error {
+	// initialize a list of capnp interfaces
+	lans, e := call.Results.NewLans(int32(len(p.lans)))
+	if e != nil {
+		return e
+	}
+
+	// populate the list
+	seg := call.Results.Segment()
+	i := 0
+	for _, lan := range p.lans {
+		// MAGIC!
+		e := lans.SetPtr(i, capnp.NewInterface(seg, seg.Message().AddCap(schemas.Lan_ServerToClient(lan).Client)).ToPtr())
+		if e != nil {
+			return e
+		}
+		i++
+	}
+	return nil
+}
+
+func (p *Port) DeleteLan(call schemas.Port_deleteLan) error {
+	return NewError("Not implemented")
 }

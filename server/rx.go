@@ -13,21 +13,17 @@ type PcapStats struct {
 }
 
 type Rx struct {
-	state     *RxTxState
-	stats     PcapStats
-	buffered  bool
-	port      string
-	direction pcap.Direction
-	Packets   chan *RawPacket
-	pktCount  uint32
+	state    *RxTxState
+	stats    PcapStats
+	port     string
+	Packets  chan *RawPacket
+	pktCount uint32
 }
 
 type RawPacket struct {
 	data []byte
 	ci   gopacket.CaptureInfo
 }
-
-type Buffer []*RawPacket
 
 func (rx *Rx) Stats() (PcapStats, error) {
 	if rx.state.Done() {
@@ -44,56 +40,118 @@ func (rx *Rx) Stats() (PcapStats, error) {
 	panic("Unknown state")
 }
 
-func NewRx(port string, direction pcap.Direction, buffered bool) *Rx {
-	c := Rx{
-		Packets:   make(chan *RawPacket, 1000),
-		state:     NewRxTxState(),
-		buffered:  buffered,
-		direction: direction,
-		port:      port,
-	}
-	return &c
+func NewRx(port string) *Rx {
+	rx := Rx{port: port, state: NewRxTxState()}
+	return &rx
 }
 
-func (rx *Rx) Start(pktCount uint32) error {
-	handle, e := pcap.OpenLive(rx.port, 65635, rx.buffered, time.Millisecond*10)
+func (rx *Rx) getPcapHandle(direction pcap.Direction, bpf string) (handle *pcap.Handle, e error) {
+	handle, e = pcap.OpenLive(
+		rx.port,
+		65635, // capture max packet size by default
+		true,  // set promiscuous mode
+		time.Millisecond*10)
 	if e != nil {
-		return NewError("Could not create pcap handle:", e.Error())
+		return
 	}
 
-	e = handle.SetDirection(rx.direction)
+	e = handle.SetDirection(direction)
 	if e != nil {
-		return NewError("Could not set pcap handle direction:", e.Error())
+		handle.Close()
+		return
+	}
+
+	if bpf != "" {
+		e = handle.SetBPFFilter(bpf)
+		if e != nil {
+			handle.Close()
+			return
+		}
+	}
+	return
+}
+
+func (rx *Rx) Capture(packets chan<- *RawPacket, pktCount uint32, direction pcap.Direction, bpf string) error {
+	handle, e := rx.getPcapHandle(direction, bpf)
+	if e != nil {
+		return e
 	}
 
 	rx.pktCount = pktCount
 	rx.state.SetRun()
-	if rx.buffered {
-		buf := newRingBuf(10000)
-		go rx.consumeChunks(buf)
-		go rx.captureChunks(buf, handle)
-	} else {
-		go rx.capture(handle)
-	}
+	go rx.capture(handle, packets)
 	return nil
 }
 
-func (rx *Rx) capture(handle *pcap.Handle) {
-	defer rx.state.SetDone()
-	defer close(rx.Packets)
-	defer handle.Close()
-	count := uint32(0)
+func (rx *Rx) capture(handle *pcap.Handle, packets chan<- *RawPacket) {
+	defer func(handle *pcap.Handle, packets chan<- *RawPacket) {
+		Info.Println("done capturing")
+		close(packets)
+		handle.Close()
+		rx.state.SetDone()
+	}(handle, packets)
 
+	count := uint32(0)
 	for {
 		data, ci, e := handle.ReadPacketData()
 		if e == nil {
 			count++
 			// WARNING: this can block forever is nothing is consuming the incoming packets
-			rx.Packets <- &RawPacket{data: data, ci: ci}
+			packets <- &RawPacket{data: data, ci: ci}
 		}
 		if !(count < rx.pktCount || rx.pktCount == 0) || rx.state.Stopping() {
 			break
 		}
+	}
+	rx.setStats(handle)
+}
+
+func (rx *Rx) CaptureChunks(chunks chan<- []*RawPacket, pktCount uint32, direction pcap.Direction, bpf string) error {
+	handle, e := rx.getPcapHandle(direction, bpf)
+	if e != nil {
+		return e
+	}
+	rx.pktCount = pktCount
+	rx.state.SetRun()
+	go rx.captureChunks(handle, chunks)
+	return nil
+}
+
+func (rx *Rx) captureChunks(handle *pcap.Handle, chunks chan<- []*RawPacket) {
+	defer rx.state.SetDone()
+	defer close(chunks)
+	defer handle.Close()
+
+	count := uint32(0)
+
+main:
+	for rx.pktCount == 0 || count < rx.pktCount {
+		buf := make([]*RawPacket, 1000)
+		last := -1
+		for i := 0; i < 1000; i++ {
+			for {
+				data, ci, e := handle.ReadPacketData()
+				if e == nil {
+					buf[i] = &RawPacket{data: data, ci: ci}
+					last = i
+					break
+				} else if e == pcap.NextErrorTimeoutExpired {
+					if rx.state.Stopping() {
+						break main
+					}
+					if last >= 0 {
+						chunks <- buf[:last+1]
+						count += uint32(last + 1)
+						continue main
+					}
+				}
+			}
+		}
+		if rx.state.Stopping() {
+			break main
+		}
+		chunks <- buf[:last+1]
+		count += uint32(last + 1)
 	}
 	rx.setStats(handle)
 }
@@ -115,162 +173,7 @@ func (rx *Rx) setStats(handle *pcap.Handle) error {
 	return nil
 }
 
-// kind of ring buffer implementation
-// inspired by https://github.com/zfjagann/golang-ring/blob/master/ring.go
-type ring struct {
-	In       chan Buffer
-	Out      chan Buffer
-	head     int
-	tail     int
-	len      int
-	capacity int
-	buff     []Buffer
-}
-
-func (r *ring) run() {
-	defer close(r.Out)
-loop:
-	for {
-		// give priority to writes, and only read from the ring buffer if there
-		// is nothing to write
-		select {
-		case buf := <-r.In: // data incoming: add it to the buffer and continue
-			if buf == nil { // r.In is closed, exit
-				break loop
-			}
-			r.set(buf)
-		default: // no data incoming, let see if there is something to read and if someone wants to read it
-			if r.tail < r.head { // there is something to read
-				select {
-				case r.Out <- r.peek(): // a goroutine is reading from r.Out
-					r.get()
-				default: // nobody is reading from r.Out, do nothing and continue
-				}
-			} else { // nothing to read, the buffer is empty
-				// wait for data to come, so that we do not consume CPU
-				buf := <-r.In
-				if buf == nil { // r.In is closed, exit
-					break loop
-				}
-				r.set(buf)
-			}
-		}
-	}
-	for r.head >= r.tail {
-		r.Out <- r.get()
-	}
-}
-
-func (r *ring) peek() (v Buffer) {
-	return r.buff[r.tail%r.len]
-}
-
-func (r *ring) set(v Buffer) {
-	if r.head-r.tail == r.len-1 {
-		r.resize(r.len * 4)
-	}
-	r.head = r.head + 1
-	r.buff[r.head%r.len] = v
-}
-
-func (r *ring) get() (v Buffer) {
-	v = r.buff[r.tail%r.len]
-	r.tail = r.tail + 1
-	// shrinking is expensive for big buffers, we don't do it too often
-	if r.len > r.capacity && r.head-r.tail <= r.len/10 {
-		r.resize(r.len / 5)
-	}
-	return v
-}
-
-func (r *ring) resize(size int) {
-	newbuf := make([]Buffer, size)
-	t := r.tail % r.len
-	h := r.head % r.len
-	// note: extend is normally called before t == h
-	if t >= h {
-		copy(newbuf, r.buff[t:])
-		copy(newbuf[r.len-t:], r.buff[:h+1])
-		r.head = r.len - t + h
-	} else {
-		copy(newbuf, r.buff[t:h+1])
-		r.head = h - t
-	}
-	r.buff = newbuf
-	r.len = size
-	r.tail = 0
-}
-
-func newRingBuf(capacity int) *ring {
-	r := ring{
-		buff:     make([]Buffer, capacity),
-		capacity: capacity,
-		len:      capacity,
-		head:     -1,
-		tail:     0,
-		In:       make(chan Buffer, capacity/10),
-		Out:      make(chan Buffer, capacity/10),
-	}
-	go r.run()
-	return &r
-}
-
-func (rx *Rx) consumeChunks(ring *ring) {
-	defer close(rx.Packets)
-	defer rx.state.SetDone()
-	for buf := range ring.Out {
-		for i := 0; i < len(buf); i++ {
-			rx.Packets <- buf[i]
-		}
-	}
-}
-
-func (rx *Rx) captureChunks(ring *ring, handle *pcap.Handle) {
-	defer close(ring.In)
-	defer handle.Close()
-
-	count := uint32(0)
-
-main:
-	for rx.pktCount == 0 || count < rx.pktCount {
-		buf := make(Buffer, 1000)
-		last := -1
-		for i := 0; i < 1000; i++ {
-			for {
-				data, ci, e := handle.ReadPacketData()
-				if e == nil {
-					buf[i] = &RawPacket{data: data, ci: ci}
-					last = i
-					break
-				} else if e == pcap.NextErrorTimeoutExpired {
-					if rx.state.Stopping() {
-						break main
-					}
-					if last >= 0 {
-						// this should not block too long, since the ring
-						// buffer prioritizes producer over consumer
-						ring.In <- buf[:last+1]
-						count += uint32(last + 1)
-						continue main
-					}
-				}
-			}
-		}
-		if rx.state.Stopping() {
-			break main
-		}
-		// this should not block too long, since the ring buffer prioritizes
-		// producer over consumer
-		ring.In <- buf[:last+1]
-		count += uint32(last + 1)
-	}
-	rx.setStats(handle)
-}
-
-func (rx *Rx) Close() {
-	if rx.state.Active() {
-		rx.state.SetStop()
-	}
+func (rx *Rx) Stop() {
+	rx.state.SetStop()
 	rx.state.WaitDone(0)
-	close(rx.Packets)
 }

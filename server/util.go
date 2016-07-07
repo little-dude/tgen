@@ -1,5 +1,7 @@
 package server
 
+import "net"
+
 func adjustSliceLength(length int, slice []byte) []byte {
 	l := len(slice)
 	if l == length {
@@ -26,4 +28,16 @@ func add(a, b byte) (result, overflow byte) {
 	result = byte(res & 255)
 	overflow = byte(res >> 8)
 	return
+}
+
+func IPv4ToInt(ip net.IP) uint32 {
+	return uint32(ip[0])<<24 + uint32(ip[1])<<16 + uint32(ip[2])<<8 + uint32(ip[3])
+}
+
+func IPv4FromInt(value uint32) net.IP {
+	return net.IPv4(
+		byte(value>>24),
+		byte((value&0x00ff0000)>>16),
+		byte((value&0x0000ff00)>>8),
+		byte(value&0x000000ff))
 }
