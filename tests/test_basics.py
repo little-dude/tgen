@@ -7,8 +7,8 @@ from tgenpy import protocols
 from .utils import send_and_receive
 import netaddr
 
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.mark.usefixtures('start_tgen')
@@ -189,6 +189,7 @@ def test_ethernet2(controller):
         if netaddr.EUI(ethernet.src).value != idx:
             assert netaddr.EUI(ethernet.dst).value == 0xffffffffffff - (idx << (5*8))
             assert int(ethernet.type, 16) == 0x800
+
 
 @pytest.mark.usefixtures('create_ports')
 def test_10M_packets(controller):
