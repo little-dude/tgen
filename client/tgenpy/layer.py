@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
-from builtins import hex
 from builtins import str
 from builtins import object
+from . import utils
 import schemas
-import binascii
 
 
 class Layer(object):
@@ -58,43 +57,27 @@ class Field(object):
 
     @property
     def value(self):
-        return '0x{}'.format(self.data2str(self._value))
+        return '0x{}'.format(utils.bytes2str(self._value))
 
     @value.setter
     def value(self, data):
-        self._value = self.parse_data_input(data)
+        self._value = utils.to_bytes(data)
 
     @property
     def step(self):
-        return '0x{}'.format(self.data2str(self._step))
+        return '0x{}'.format(utils.bytes2str(self._step))
 
     @step.setter
     def step(self, data):
-        self._step = self.parse_data_input(data)
+        self._step = utils.to_bytes(data)
 
     @property
     def mask(self):
-        return '0x{}'.format(self.data2str(self._mask))
+        return '0x{}'.format(utils.bytes2str(self._mask))
 
     @mask.setter
     def mask(self, data):
-        self._mask = self.parse_data_input(data)
-
-    @staticmethod
-    def parse_data_input(data):
-        if isinstance(data, str):
-            data = str2int(data)
-        elif isinstance(data, (tuple, list)):
-            data = iter2int(data)
-        if not isinstance(data, int):
-            raise ValueError('Cannot parse {}'.format(data))
-        data = hex(data)[2:]
-        if len(data) % 2 == 1:
-            data = '0{}'.format(data)
-        try:
-            return binascii.unhexlify(data)
-        except:
-            raise Exception(data)
+        self._mask = utils.to_bytes(data)
 
     @property
     def mode(self):
@@ -116,19 +99,12 @@ class Field(object):
     @count.setter
     def count(self, data):
         if isinstance(data, str):
-            data = str2int(data)
+            data = utils.str2int(data)
         if not isinstance(data, int):
             raise ValueError('Expected "int" got "{}"'.format(type(data)))
         if data < 0 or data > 18446744073709551615:
             raise ValueError('"count" must be between 0 and 2^64-1')
         self._count = data
-
-    @staticmethod
-    def data2str(data):
-        string = binascii.hexlify(data).decode()
-        if string == '':
-            string = '00'
-        return string
 
 
 class FieldMode(object):
@@ -146,25 +122,3 @@ MODES_MAPPING = {
     'decrement': FieldMode.DECREMENT,
     'randomize': FieldMode.RANDOMIZE,
 }
-
-
-def str2int(string):
-    if string.startswith('0x'):
-        return int(string, 16)
-    elif string.startswith('0b'):
-        return int(string, 2)
-    else:
-        return int(string)
-
-
-def iter2int(iterable):
-    data = []
-    for item in iterable:
-        if isinstance(item, int):
-            data.append(str(item))
-        elif isinstance(item, str):
-            data.append(str2int(item))
-        else:
-            raise ValueError(
-                'Cannot parse {}'.format(iterable))
-    return ''.data
