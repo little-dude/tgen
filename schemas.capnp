@@ -9,20 +9,43 @@ interface Controller {
 }
 
 interface Port {
-    getConfig    @0 ()                                   -> (config :Config);
-    setConfig    @1 (config :Config)                     -> ();
-    startSend    @2 (ids :List(UInt16))                  -> ();
-    waitSend     @3 (timeout :UInt32)                    -> (done :Bool);
-    # stopSend    @6  () -> ();
-    startCapture @4 (file:Text, packetCount :UInt32)     -> ();
-    waitCapture  @5 (timeout :UInt32)                    -> (done :Bool, received :UInt32, dropped :UInt32);
-    stopCapture  @6 ()                                   -> ();
-    # getStats     @5  () -> ();
-    # clearStats   @6  () -> ();
-    # saveCapture  @7  () -> ();
     struct Config {
-        name        @0 :Text;
+        name @0 :Text;
     }
+    # ---------
+    # Methods
+    # ---------
+
+    getConfig    @0 ()                                -> (config :Config);
+    setConfig    @1 (config :Config)                  -> ();
+
+    startSend    @2 (ids :List(UInt16))               -> ();
+    waitSend     @3 (timeout :UInt32)                 -> (done :Bool);
+
+    startCapture @4 (file :Text, packetCount :UInt32) -> ();
+    waitCapture  @5 (timeout :UInt32)                 -> (done :Bool, received :UInt32, dropped :UInt32);
+    stopCapture  @6 ()                                -> ();
+
+    addLan       @7 (cidr :Text)                      -> (lan :Lan);
+    getLans      @8 ()                                -> (lans :List(Lan));
+    deleteLan    @9 (lan :Lan)                        -> (lan :Lan);
+}
+
+interface Lan {
+    struct Config {
+        devices @0 :List(Device);
+        cidr    @1 :Text;
+    }
+    getConfig @0 ()               -> (config :Config);
+    setConfig @1 (config :Config) -> ();
+    start     @2 ()               -> ();
+    stop      @3 ()               -> ();
+}
+
+
+struct Device {
+    ip @0 :Data;
+    mac @1 :Data;
 }
 
 struct Stream {
