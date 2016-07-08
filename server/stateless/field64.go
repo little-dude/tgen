@@ -15,39 +15,51 @@ type Field64 struct {
 }
 
 func (field *Field64) GetValue() []byte {
-	return []byte{byte(field.Value >> 8), byte(field.Value & 255)}
+	value := make([]byte, 8)
+	for i := 0; i < 8; i++ {
+		value[i] = byte((field.Value >> uint(8*(7-i))) & 255)
+	}
+	return value
 }
 
 func (field *Field64) SetValue(value []byte) {
 	value = adjustSliceLength(2, value)
 	res := uint64(0)
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 8; i++ {
 		res += uint64(value[i]) << (8 * uint(7-i))
 	}
 	field.Value = res & field.FullMask
 }
 
 func (field *Field64) GetMask() []byte {
-	return []byte{byte(field.Mask >> 8), byte(field.Mask & 255)}
+	mask := make([]byte, 8)
+	for i := 0; i < 8; i++ {
+		mask[i] = byte((field.Mask >> uint(8*(7-i))) & 255)
+	}
+	return mask
 }
 
 func (field *Field64) SetMask(mask []byte) {
 	mask = adjustSliceLength(2, mask)
 	res := uint64(0)
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 8; i++ {
 		res += uint64(mask[i]) << (8 * uint(7-i))
 	}
 	field.Mask = res & field.FullMask
 }
 
 func (field *Field64) GetStep() []byte {
-	return []byte{byte(field.Step >> 8), byte(field.Step & 255)}
+	step := make([]byte, 8)
+	for i := 0; i < 8; i++ {
+		step[i] = byte((field.Step >> uint(8*(7-i))) & 255)
+	}
+	return step
 }
 
 func (field *Field64) SetStep(step []byte) {
-	step = adjustSliceLength(2, step)
+	step = adjustSliceLength(8, step)
 	res := uint64(0)
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 8; i++ {
 		res += uint64(step[i]) << (8 * uint(7-i))
 	}
 	field.Step = res & field.FullMask
