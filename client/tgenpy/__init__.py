@@ -2,7 +2,7 @@
 
 from __future__ import unicode_literals
 import capnp
-from . import utils
+from . import encoding
 
 
 def make_schemas_module():
@@ -15,7 +15,8 @@ def make_schemas_module():
     capnp.remove_import_hook()
     pkg_path = os.path.dirname(os.path.realpath(__file__))
     schemas_path = os.path.join(pkg_path, 'schemas.capnp')
-    sys.modules['schemas'] = capnp.load(utils.ensure_native_str(schemas_path))
+    sys.modules['schemas'] = capnp.load(
+        encoding.ensure_native_str(schemas_path))
 
 make_schemas_module()
 

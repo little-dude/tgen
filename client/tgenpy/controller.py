@@ -6,7 +6,7 @@ import capnp
 import schemas
 from .port import Port
 from .stream import Stream
-from . import utils
+from . import encoding
 
 
 class Controller(object):
@@ -16,7 +16,7 @@ class Controller(object):
 
     def __init__(self, hostname, port):
         address = '{}:{}'.format(hostname, port)
-        client = capnp.TwoPartyClient(utils.ensure_native_str(address))
+        client = capnp.TwoPartyClient(encoding.ensure_native_str(address))
         self._controller = client.bootstrap().cast_as(schemas.Controller)
 
     def fetch_ports(self):
