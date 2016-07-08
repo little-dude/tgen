@@ -25,7 +25,7 @@ _testmain.go
 
 # go build files
 tgen
-schemas/*
+server/schemas/*
 
 # python
 client/build/

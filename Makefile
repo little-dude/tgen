@@ -40,7 +40,7 @@ GO_DEP			= $(GO_TEST) -i
 GO_FMT			= gofmt -w
 go: version_info capnp
 	@echo "building server"
-	$(GO_BUILD) -ldflags "-X main.version=$(BUILD_NUMBER) -X main.build=$(BUILD_DATE)" -o tgen main.go
+	cd server ; $(GO_BUILD) -ldflags "-X main.version=$(BUILD_NUMBER) -X main.build=$(BUILD_DATE)" -o ../tgen
 	@echo "done building server"
 
 PY_CMD 	   		= python setup.py
@@ -59,10 +59,11 @@ capnp:
 	rm -f tmp.capnp
 	echo "using Go = import \"/zombiezen.com/go/capnproto2/go.capnp\";" > tmp.capnp
 	echo "\$$Go.package(\"schemas\");" >> tmp.capnp
-	echo "\$$Go.import(\"github.com/little-dude/tgen/schemas\");" >> tmp.capnp
+	echo "\$$Go.import(\"github.com/little-dude/tgen/server/schemas\");" >> tmp.capnp
 	cat schemas.capnp >> tmp.capnp
 	capnp compile -ogo tmp.capnp -I $(GOPATH)/src/
-	mv tmp.capnp.go schemas/main.go
+	mkdir -p server/schemas/
+	mv tmp.capnp.go server/schemas/main.go
 	rm -f tmp.capnp
 
 clean:
