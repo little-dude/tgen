@@ -90,5 +90,16 @@ struct Protocol {
             options      @15 :Field = (mode = 4, mask = 0x"00",                value = 0x"00")               ;
             padding      @16 :Field = (mode = 4, mask = 0x"00",                value = 0x"00")               ;
         }
+        arp :group {
+            hardwareType          @17 :Field = (mode = 0, mask = 0x"FF FF",             value = 0x"00 01")            ;
+            protocolType          @18 :Field = (mode = 0, mask = 0x"FF FF",             value = 0x"08 00")            ;
+            hardwareLength        @19 :Field = (mode = 0, mask = 0x"FF",                value = 0x"06")               ;
+            protocolLength        @20 :Field = (mode = 0, mask = 0x"FF",                value = 0x"04")               ;
+            operation             @21 :Field = (mode = 0, mask = 0x"FF FF",             value = 0x"00 01")            ;
+            senderHardwareAddress @22 :Field = (mode = 0, mask = 0x"FF FF FF FF FF FF", value = 0x"00 00 00 00 00 00");
+            senderProtocolAddress @23 :Field = (mode = 0, mask = 0x"FF FF FF FF",       value = 0x"00 00 00 00")      ;
+            targetHardwareAddress @24 :Field = (mode = 0, mask = 0x"FF FF FF FF FF FF", value = 0x"00 00 00 00 00 00");
+            targetProtocolAddress @25 :Field = (mode = 0, mask = 0x"FF FF FF FF",       value = 0x"00 00 00 00")      ;
+        }
     }
 }
